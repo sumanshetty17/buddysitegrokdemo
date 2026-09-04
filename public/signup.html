@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sign up — BuddySite</title>
+<link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="container">
+  <nav class="nav"><a href="/" class="logo">Buddy<span>Site</span></a></nav>
+  <form class="auth" id="signupForm">
+    <h2>Create your account</h2>
+    <p class="muted">Just ₹99 for your first 2 months.</p>
+    <label>Full name</label>
+    <input type="text" id="name" required placeholder="Priya Sharma"/>
+    <label>Email</label>
+    <input type="email" id="email" required placeholder="you@example.com"/>
+    <label>Password</label>
+    <input type="password" id="password" required minlength="6" placeholder="At least 6 characters"/>
+    <button class="btn" style="width:100%;margin-top:24px;" type="submit">Create account</button>
+    <div class="error-msg" id="err"></div>
+    <p class="muted" style="margin-top:20px;text-align:center;">Already have an account? <a href="/login.html">Log in</a></p>
+  </form>
+</div>
+<script src="/js/api.js"></script>
+<script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errBox = document.getElementById('err');
+  errBox.style.display = 'none';
+  try {
+    const data = await API.call('/api/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: document.getElementById('name').value,
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      })
+    });
+    API.setAuth(data.token, data.user);
+    location.href = '/dashboard.html';
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

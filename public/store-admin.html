@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Manage Store — BuddySite</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css"/>
+<style>
+  .upload-progress-wrap{margin-top:10px;}
+  .upload-progress-bar{width:100%;max-width:280px;height:8px;background:#F3E3DC;border-radius:100px;overflow:hidden;margin-bottom:6px;}
+  .upload-progress-fill{height:100%;width:0%;background:#FF6A88;border-radius:100px;transition:width .15s ease;}
+  .upload-progress-text{font-size:.8rem;color:#8a7a8c;}
+  .upload-progress-done{font-size:.85rem;color:#1a8a5f;font-weight:600;}
+
+  .price-fields-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  @media (max-width:640px){ .price-fields-row{grid-template-columns:1fr;} }
+  .price-hint{font-size:.8rem;color:#8a7a8c;margin-top:4px;}
+
+  .size-chip-row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;}
+  .size-chip{display:inline-flex;align-items:center;gap:6px;min-width:38px;height:38px;padding:0 10px;border:1.5px solid #FF6A88;border-radius:8px;font-weight:600;background:#fff;color:#3D2C3E;}
+  .size-chip button{background:none;border:none;cursor:pointer;color:#8a7a8c;font-size:.9rem;padding:0;line-height:1;}
+  .size-chip-input-row{display:flex;gap:8px;align-items:center;}
+  .size-chip-input-row input{max-width:120px;}
+  .size-chip-add-btn{width:38px;height:38px;flex-shrink:0;border-radius:8px;border:1.5px dashed #FF6A88;background:#fff;color:#FF6A88;font-size:1.3rem;cursor:pointer;line-height:1;}
+
+  .size-guide-wrap{margin-top:14px;border:1px solid #F3E3DC;border-radius:12px;padding:16px;background:#FFF9F5;}
+  .size-guide-block-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fff;border:1px solid #F3E3DC;border-radius:8px;margin-bottom:6px;font-size:.85rem;}
+
+  .analytics-grid{display:flex;flex-wrap:wrap;gap:14px;}
+  .analytics-card{flex:1 1 180px;background:#fff;border:1px solid #F3E3DC;border-radius:14px;padding:18px 20px;}
+  .analytics-label{font-size:.8rem;color:#8a7a8c;font-weight:600;margin-bottom:6px;}
+  .analytics-value{font-size:1.5rem;font-weight:700;color:#3D2C3E;}
+  .top-product-row{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#fff;border:1px solid #F3E3DC;border-radius:8px;margin-bottom:6px;font-size:.9rem;}
+  .revenue-chart{display:flex;align-items:flex-end;gap:10px;height:160px;padding:10px 4px 0;border-bottom:1px solid #F3E3DC;}
+  .revenue-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+  .revenue-bar{width:100%;max-width:36px;background:#FF6A88;border-radius:6px 6px 0 0;min-height:2px;}
+  .revenue-bar-label{font-size:.7rem;color:#8a7a8c;margin-top:6px;}
+
+  .searchable-picker{position:relative;}
+  .searchable-picker-input{width:100%;}
+  .searchable-picker-list{position:absolute;top:100%;left:0;right:0;z-index:5;background:#fff;border:1px solid #F3E3DC;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:240px;overflow-y:auto;margin-top:4px;}
+  .searchable-picker-item{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid #F8EFE9;padding:10px 14px;cursor:pointer;font-size:.9rem;color:#3D2C3E;}
+  .searchable-picker-item:last-child{border-bottom:none;}
+  .searchable-picker-item:hover{background:#FFF3EC;}
+  .searchable-picker-empty{padding:12px 14px;color:#8a7a8c;font-size:.85rem;}
+</style>
+</head>
+<body>
+<div style="background:#3D2C3E;color:#FFD166;text-align:center;padding:8px;font-size:.8rem;font-weight:700;letter-spacing:.03em;">⚠️ DEMO BUILD — plan activation skips real payment. Never deploy this version publicly.</div>
+<div class="topbar container">
+  <div class="row">
+    <a href="/dashboard.html" class="btn secondary">← Back</a>
+    <strong id="storeNameLabel" style="font-family:Poppins,sans-serif;"></strong>
+  </div>
+  <a class="btn" id="viewStoreBtn" target="_blank">View my store</a>
+</div>
+
+<div class="modal-overlay" id="editProductModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:32px;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;">
+    <h2 style="margin-top:0;">Edit Product</h2>
+    <label>Product images <span class="muted" style="font-weight:400;">(you can select more than one)</span></label>
+    <div class="file-input-wrap">
+      <input type="file" id="editProdFile" accept="image/*" multiple/>
+      <div id="editProdUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+      <div id="editProdPreviewWrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+    </div>
+    <label>Product name</label><input id="editProdName"/>
+
+    <label style="margin-top:20px;">Pricing</label>
+    <div class="price-fields-row">
+      <div>
+        <label style="margin-top:0;font-weight:400;">Scratch price (₹) <span class="muted">optional</span></label>
+        <input id="editProdOriginalPrice" type="number" placeholder="e.g. 999"/>
+      </div>
+      <div>
+        <label style="margin-top:0;font-weight:400;">Off %</label>
+        <input id="editProdOffPercent" type="number" placeholder="e.g. 30"/>
+      </div>
+      <div>
+        <label style="margin-top:0;font-weight:400;">Final price (₹)</label>
+        <input id="editProdPrice" type="number" placeholder="e.g. 699"/>
+      </div>
+    </div>
+    <p class="price-hint">Fill in any two of Scratch price / Off % / Final price and we'll work out the third.</p>
+
+    <label style="margin-top:20px;">Inventory</label>
+    <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+      <input type="checkbox" id="editProdTrackInventory" style="width:auto;" onchange="document.getElementById('editProdStockRow').style.display = this.checked ? 'block' : 'none';"/>
+      Track stock for this product
+    </label>
+    <div id="editProdStockRow" style="display:none;margin-top:8px;">
+      <label style="margin-top:0;font-weight:400;">Units in stock</label>
+      <input id="editProdStock" type="number" min="0" placeholder="e.g. 25"/>
+    </div>
+
+    <label style="margin-top:20px;">Sizes (optional)</label>
+    <div class="size-chip-row" id="editProdSizeChips"></div>
+    <div class="size-chip-input-row">
+      <input id="editProdSizeInput" placeholder="e.g. M"/>
+      <button type="button" class="size-chip-add-btn" id="editProdSizeAddBtn">+</button>
+    </div>
+
+    <label>Color (optional)</label><input id="editProdColor"/>
+    <label>Description (optional)</label><textarea id="editProdDesc" rows="2"></textarea>
+    <label id="editProdCategoryLabel" style="display:none;">Category</label>
+    <select id="editProdCategory" style="display:none;"></select>
+    <div id="editProdSectionsWrap" style="display:none;margin-top:16px;">
+      <label>Include in these homepage sections (optional)</label>
+      <div id="editProdSectionsChecks" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;"></div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <button type="button" class="icon-btn" id="editProdToggleSizeGuideBtn">+ Add / Edit Size Guide (optional)</button>
+      <div id="editProdSizeGuideWrap" class="size-guide-wrap" style="display:none;">
+        <label style="margin-top:0;">Size Guide title</label>
+        <input id="editProdSizeGuideTitle" placeholder="e.g. Size Guide"/>
+        <label>Add a paragraph</label>
+        <textarea id="editProdSizeGuideParagraph" rows="2"></textarea>
+        <button type="button" class="icon-btn" id="editProdSizeGuideAddParaBtn" style="margin-top:6px;">+ Add Paragraph</button>
+        <label style="margin-top:14px;">Add a photo</label>
+        <input type="file" id="editProdSizeGuideImageFile" accept="image/*"/>
+        <div id="editProdSizeGuideUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <label style="margin-top:14px;">Add a bullet point</label>
+        <input id="editProdSizeGuideBulletHeading" placeholder="Heading (optional)" style="margin-bottom:8px;"/>
+        <textarea id="editProdSizeGuideBulletText" rows="2" placeholder="Bullet text"></textarea>
+        <button type="button" class="icon-btn" id="editProdSizeGuideAddBulletBtn" style="margin-top:6px;">+ Add Bullet</button>
+        <p class="muted" style="font-weight:600;margin-top:16px;margin-bottom:6px;">Content added so far:</p>
+        <div id="editProdSizeGuideBlockList"></div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:20px;justify-content:flex-end;">
+      <button class="btn secondary" id="cancelEditProductBtn">Cancel</button>
+      <button class="btn" id="saveEditProductBtn">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editCategoryModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:32px;max-width:480px;width:90%;max-height:85vh;overflow-y:auto;">
+    <div class="row-between" style="margin-bottom:8px;">
+      <h2 style="margin:0;" id="editCategoryModalTitle">Edit Category</h2>
+      <button type="button" onclick="closeEditCategoryModal()" style="background:none;border:none;font-size:1.3rem;cursor:pointer;color:#8a7a8c;">✕</button>
+    </div>
+    <p class="muted" style="margin-top:0;">Remove a product from this category — it stays in your store, just without this category.</p>
+    <div id="editCategoryProductList"></div>
+  </div>
+</div>
+
+<div class="admin-wrap">
+  <div class="admin-side">
+    <a href="#" data-tab="settings" class="active">🏪 Store Settings</a>
+    <a href="#" data-tab="hero" id="heroLink">🎞 Homepage Slider</a>
+    <a href="#" data-tab="about">📄 About Us Page</a>
+    <a href="#" data-tab="contact">☎️ Contact Us Page</a>
+    <a href="#" data-tab="brand">🏬 Brand Story</a>
+    <a href="#" data-tab="add">➕ Add Product</a>
+    <a href="#" data-tab="manage">📦 Manage Products</a>
+    <a href="#" data-tab="categories" id="categoriesLink">🏷 Categories</a>
+    <a href="#" data-tab="groups" id="groupsLink">🗂 Category Sections</a>
+    <a href="#" data-tab="sliding" id="slidingLink">🎠 Sliding Products</a>
+    <a href="#" data-tab="coupons" id="couponsLink">🏷️ Coupons</a>
+    <a href="#" data-tab="payment">💳 Payment Method</a>
+    <a href="#" data-tab="orders">🧾 Orders</a>
+    <a href="#" data-tab="finance">💰 Finance / Payouts</a>
+    <a href="#" data-tab="analytics" id="analyticsLink">📊 Analytics</a>
+  </div>
+
+  <div class="admin-main">
+
+    <div class="tab-panel" data-panel="settings">
+      <h2>Store Settings</h2>
+      <label>Store name</label>
+      <input id="storeName"/>
+      <label>Store description</label>
+      <textarea id="storeDesc" rows="3" placeholder="Tell customers what your store is about"></textarea>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:10px;">
+        <div>
+          <label style="font-size:.8rem;">Text position</label>
+          <select id="descAlign">
+            <option value="left">Left</option>
+            <option value="center">Center</option>
+            <option value="right">Right</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.8rem;">Text size</label>
+          <select id="descSize">
+            <option value="small">Small</option>
+            <option value="medium">Medium</option>
+            <option value="large">Large</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.8rem;">Font style</label>
+          <select id="descFont">
+            <option value="inter">Modern (Inter)</option>
+            <option value="poppins">Rounded (Poppins)</option>
+            <option value="playfair">Elegant (Playfair)</option>
+          </select>
+        </div>
+      </div>
+      <label>Background (image or video)</label>
+      <div class="file-input-wrap">
+        <input type="file" id="bgFile" accept="image/*,video/*"/>
+        <p class="muted" style="font-size:.8rem;margin-top:8px;">Upload a photo or short video for your store's homepage banner.</p>
+        <div id="bgUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <div id="bgPreviewWrap"></div>
+      </div>
+      <label style="margin-top:20px;">Website style</label>
+      <div id="storeThemeCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px;"></div>
+
+      <label style="margin-top:20px;">Customize colors <span class="muted" style="font-weight:400;">(optional — overrides your theme's default colors)</span></label>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px;">
+        <div>
+          <label style="margin-top:0;font-weight:400;">Accent color</label>
+          <input type="color" id="colorAccent" style="width:100%;height:40px;padding:2px;cursor:pointer;"/>
+        </div>
+        <div>
+          <label style="margin-top:0;font-weight:400;">Button color</label>
+          <input type="color" id="colorBtnBg" style="width:100%;height:40px;padding:2px;cursor:pointer;"/>
+        </div>
+        <div>
+          <label style="margin-top:0;font-weight:400;">Button text color</label>
+          <input type="color" id="colorBtnText" style="width:100%;height:40px;padding:2px;cursor:pointer;"/>
+        </div>
+        <div>
+          <label style="margin-top:0;font-weight:400;">Background color</label>
+          <input type="color" id="colorBg" style="width:100%;height:40px;padding:2px;cursor:pointer;"/>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <button type="button" class="icon-btn" onclick="saveStoreColors()">Save colors</button>
+        <button type="button" class="icon-btn" onclick="resetStoreColors()">Reset to theme defaults</button>
+      </div>
+      <div class="msg" id="colorsMsg" style="font-size:.85rem;margin-top:8px;padding:8px 12px;border-radius:6px;display:none;"></div>
+
+      <label style="margin-top:20px;">Store name position</label>
+      <select id="storeNamePositionSelect">
+        <option value="left">Top left</option>
+        <option value="center">Top middle</option>
+      </select>
+
+      <label style="margin-top:20px;">Logo video (optional)</label>
+      <p class="muted" style="font-size:.8rem;margin:2px 0 8px;">A short looping video (plays on repeat, no sound) shown in your header — expands the header height to fit it.</p>
+      <div class="file-input-wrap">
+        <input type="file" id="logoVideoFile" accept="video/*"/>
+        <div id="logoVideoUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <div id="logoVideoPreviewWrap"></div>
+      </div>
+      <label style="margin-top:12px;">Logo video position</label>
+      <select id="logoVideoPositionSelect">
+        <option value="left">Top left</option>
+        <option value="center">Top middle</option>
+        <option value="right">Top right</option>
+      </select>
+
+      <label style="margin-top:20px;">Cart position</label>
+      <p class="muted" style="font-size:.8rem;margin:2px 0 8px;">Either way, customers get a full cart page (like About Us / Contact Us).</p>
+      <select id="cartPositionSelect">
+        <option value="bottom">Floating button at the bottom of the page</option>
+        <option value="top">Icon in the top navigation bar</option>
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:20px;"><input type="checkbox" id="publishToggle" style="width:auto;"/> Published (visible to customers)</label>
+      <button class="btn" id="saveSettingsBtn" style="margin-top:20px;">Save Settings</button>
+      <span class="muted" id="settingsStatus" style="margin-left:10px;"></span>
+    </div>
+
+    <div class="tab-panel" data-panel="hero" style="display:none;">
+      <h2>Homepage Slider</h2>
+      <p class="muted">Add multiple banner images that auto-advance, with arrows for customers to move between them — like the top of your homepage. Available on the Pro plan.</p>
+      <div id="heroLockedNote" class="fee-note" style="display:none;">🔒 Upgrade to the Pro plan to add a homepage slider. Until then, your Store Settings background image is used instead.</div>
+      <div id="heroPanelBody" style="display:none;">
+        <label>Slide image</label>
+        <div class="file-input-wrap">
+          <input type="file" id="newSlideImageFile" accept="image/*"/>
+          <div id="newSlideUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+          <div id="newSlideImgPreview"></div>
+        </div>
+        <label style="margin-top:12px;">Heading (optional)</label>
+        <input id="newSlideHeading" placeholder="e.g. BOTTOMS" style="max-width:320px;"/>
+        <label style="margin-top:12px;">Subtext (optional)</label>
+        <input id="newSlideSubtext" placeholder="e.g. Tap to explore" style="max-width:320px;"/>
+        <label style="margin-top:12px;">Link (optional)</label>
+        <input id="newSlideLink" placeholder="/store/your-slug/category/1" style="max-width:320px;"/>
+        <button class="btn" id="addSlideBtn" style="margin-top:14px;">+ Add Slide</button>
+        <p class="muted" style="font-weight:600;margin-top:20px;margin-bottom:8px;">Slides, in the order they'll play:</p>
+        <div id="slideList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="about" style="display:none;">
+      <h2>About Us Page</h2>
+      <p class="muted">Available on every plan. Tell customers who you are.</p>
+      <label>Page background</label>
+      <div class="file-input-wrap">
+        <input type="file" id="aboutBgFile" accept="image/*"/>
+        <input type="file" id="aboutBgVideoFile" accept="video/*" style="margin-top:8px;display:none;"/>
+        <p class="muted" id="aboutVideoNote" style="font-size:.8rem;margin-top:8px;"></p>
+        <div id="aboutBgUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <div id="aboutBgPreviewWrap"></div>
+      </div>
+      <div style="margin-top:20px;">
+        <label>Add a paragraph</label>
+        <textarea id="aboutParagraphInput" rows="3" placeholder="Write something about your story..."></textarea>
+        <button class="icon-btn" id="aboutAddParagraphBtn" style="margin-top:8px;">+ Add Paragraph</button>
+      </div>
+      <div style="margin-top:20px;">
+        <label>Add a photo</label>
+        <input type="file" id="aboutImageFile" accept="image/*"/>
+        <div id="aboutImageUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <label style="margin-top:10px;">Photo alignment</label>
+        <select id="aboutImageAlign">
+          <option value="left">Left</option>
+          <option value="center" selected>Center</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      <p class="muted" style="font-weight:600;margin-top:20px;margin-bottom:8px;">Content that will be saved to this page:</p>
+      <div id="aboutBlockList"></div>
+      <button class="btn" id="aboutSaveBtn" style="margin-top:20px;">Save About Us Page</button>
+      <span class="muted" id="aboutStatus" style="margin-left:10px;"></span>
+    </div>
+
+    <div class="tab-panel" data-panel="contact" style="display:none;">
+      <h2>Contact Us Page</h2>
+      <p class="muted">Available on every plan. Share how customers can reach you.</p>
+      <label>Page background</label>
+      <div class="file-input-wrap">
+        <input type="file" id="contactBgFile" accept="image/*"/>
+        <input type="file" id="contactBgVideoFile" accept="video/*" style="margin-top:8px;display:none;"/>
+        <p class="muted" id="contactVideoNote" style="font-size:.8rem;margin-top:8px;"></p>
+        <div id="contactBgUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <div id="contactBgPreviewWrap"></div>
+      </div>
+      <div style="margin-top:20px;">
+        <label>Add a paragraph</label>
+        <textarea id="contactParagraphInput" rows="3" placeholder="Phone, email, address, hours..."></textarea>
+        <button class="icon-btn" id="contactAddParagraphBtn" style="margin-top:8px;">+ Add Paragraph</button>
+      </div>
+      <div style="margin-top:20px;">
+        <label>Add a photo</label>
+        <input type="file" id="contactImageFile" accept="image/*"/>
+        <div id="contactImageUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <label style="margin-top:10px;">Photo alignment</label>
+        <select id="contactImageAlign">
+          <option value="left">Left</option>
+          <option value="center" selected>Center</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      <p class="muted" style="font-weight:600;margin-top:20px;margin-bottom:8px;">Content that will be saved to this page:</p>
+      <div id="contactBlockList"></div>
+      <button class="btn" id="contactSaveBtn" style="margin-top:20px;">Save Contact Us Page</button>
+      <span class="muted" id="contactStatus" style="margin-left:10px;"></span>
+    </div>
+
+    <div class="tab-panel" data-panel="brand" style="display:none;">
+      <h2>Brand Story</h2>
+      <p class="muted">Available on every plan. Tell customers about your brand — shown near the bottom of your homepage, above the footer.</p>
+      <label>Section background (optional)</label>
+      <div class="file-input-wrap">
+        <input type="file" id="brandBgFile" accept="image/*"/>
+        <input type="file" id="brandBgVideoFile" accept="video/*" style="margin-top:8px;display:none;"/>
+        <p class="muted" id="brandVideoNote" style="font-size:.8rem;margin-top:8px;"></p>
+        <div id="brandBgUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <div id="brandBgPreviewWrap"></div>
+      </div>
+      <div style="margin-top:20px;">
+        <label>Add a paragraph</label>
+        <textarea id="brandParagraphInput" rows="3" placeholder="Write your brand's story..."></textarea>
+        <button class="icon-btn" id="brandAddParagraphBtn" style="margin-top:8px;">+ Add Paragraph</button>
+      </div>
+      <div style="margin-top:20px;">
+        <label>Add a photo</label>
+        <input type="file" id="brandImageFile" accept="image/*"/>
+        <div id="brandImageUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <label style="margin-top:10px;">Photo alignment</label>
+        <select id="brandImageAlign">
+          <option value="left">Left</option>
+          <option value="center" selected>Center</option>
+          <option value="right">Right</option>
+        </select>
+      </div>
+      <p class="muted" style="font-weight:600;margin-top:20px;margin-bottom:8px;">Content that will be saved to this section:</p>
+      <div id="brandBlockList"></div>
+      <button class="btn" id="brandSaveBtn" style="margin-top:20px;">Save Brand Story</button>
+      <span class="muted" id="brandStatus" style="margin-left:10px;"></span>
+
+      <h2 style="margin-top:44px;">Social Media</h2>
+      <p class="muted">Shown as links under your brand story. Leave any blank to hide it.</p>
+      <label>Instagram URL</label><input id="socialInstagram" placeholder="https://instagram.com/yourbrand"/>
+      <label>Facebook URL</label><input id="socialFacebook" placeholder="https://facebook.com/yourbrand"/>
+      <label>Twitter / X URL</label><input id="socialTwitter" placeholder="https://x.com/yourbrand"/>
+      <label>YouTube URL</label><input id="socialYoutube" placeholder="https://youtube.com/@yourbrand"/>
+      <label>TikTok URL</label><input id="socialTiktok" placeholder="https://tiktok.com/@yourbrand"/>
+      <label>Website URL</label><input id="socialWebsite" placeholder="https://yourbrand.com"/>
+      <button class="btn" id="socialSaveBtn" style="margin-top:16px;">Save Social Links</button>
+      <span class="muted" id="socialStatus" style="margin-left:10px;"></span>
+    </div>
+
+    <div class="tab-panel" data-panel="add" style="display:none;">
+      <h2>Add a Product</h2>
+      <label>Product images <span class="muted" style="font-weight:400;">(you can select more than one)</span></label>
+      <div class="file-input-wrap">
+        <input type="file" id="prodFile" accept="image/*" multiple/>
+        <div id="prodUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+        <div id="prodPreviewWrap" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;"></div>
+      </div>
+      <label>Product name</label><input id="prodName"/>
+
+      <label style="margin-top:20px;">Pricing</label>
+      <div class="price-fields-row">
+        <div>
+          <label style="margin-top:0;font-weight:400;">Scratch price (₹) <span class="muted">optional</span></label>
+          <input id="prodOriginalPrice" type="number" placeholder="e.g. 999"/>
+        </div>
+        <div>
+          <label style="margin-top:0;font-weight:400;">Off %</label>
+          <input id="prodOffPercent" type="number" placeholder="e.g. 30"/>
+        </div>
+        <div>
+          <label style="margin-top:0;font-weight:400;">Final price (₹)</label>
+          <input id="prodPrice" type="number" placeholder="e.g. 699"/>
+        </div>
+      </div>
+      <p class="price-hint">Fill in any two of Scratch price / Off % / Final price and we'll work out the third. Leave Scratch price and Off % blank to show only the Final price.</p>
+      <div class="fee-note" id="feeNote"></div>
+
+      <label style="margin-top:20px;">Inventory</label>
+      <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;">
+        <input type="checkbox" id="prodTrackInventory" style="width:auto;" onchange="document.getElementById('prodStockRow').style.display = this.checked ? 'block' : 'none';"/>
+        Track stock for this product
+      </label>
+      <div id="prodStockRow" style="display:none;margin-top:8px;">
+        <label style="margin-top:0;font-weight:400;">Units in stock</label>
+        <input id="prodStock" type="number" min="0" placeholder="e.g. 25"/>
+        <p class="muted" style="font-size:.8rem;margin-top:4px;">Customers can't order more than this. It goes to 0 automatically as orders come in, and the store shows "Out of Stock" once it hits 0.</p>
+      </div>
+
+      <label style="margin-top:20px;">Sizes (optional) <span class="muted" style="font-weight:400;">letters or numbers — e.g. S, M, L or 6, 7, 8</span></label>
+      <div class="size-chip-row" id="prodSizeChips"></div>
+      <div class="size-chip-input-row">
+        <input id="prodSizeInput" placeholder="e.g. M"/>
+        <button type="button" class="size-chip-add-btn" id="prodSizeAddBtn">+</button>
+      </div>
+
+      <label>Color (optional)</label><input id="prodColor"/>
+      <label>Description (optional)</label><textarea id="prodDesc" rows="2"></textarea>
+      <label id="prodCategoryLabel" style="display:none;">Category</label>
+      <select id="prodCategory" style="display:none;"></select>
+      <div id="prodSectionsWrap" style="display:none;margin-top:16px;">
+        <label>Include in these homepage sections (optional)</label>
+        <div id="prodSectionsChecks" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;"></div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button type="button" class="icon-btn" id="prodToggleSizeGuideBtn">+ Add Size Guide (optional)</button>
+        <div id="prodSizeGuideWrap" class="size-guide-wrap" style="display:none;">
+          <label style="margin-top:0;">Size Guide title</label>
+          <input id="prodSizeGuideTitle" placeholder="e.g. Size Guide"/>
+          <label>Add a paragraph</label>
+          <textarea id="prodSizeGuideParagraph" rows="2"></textarea>
+          <button type="button" class="icon-btn" id="prodSizeGuideAddParaBtn" style="margin-top:6px;">+ Add Paragraph</button>
+          <label style="margin-top:14px;">Add a photo</label>
+          <input type="file" id="prodSizeGuideImageFile" accept="image/*"/>
+          <div id="prodSizeGuideUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+          <label style="margin-top:14px;">Add a bullet point</label>
+          <input id="prodSizeGuideBulletHeading" placeholder="Heading (optional)" style="margin-bottom:8px;"/>
+          <textarea id="prodSizeGuideBulletText" rows="2" placeholder="Bullet text"></textarea>
+          <button type="button" class="icon-btn" id="prodSizeGuideAddBulletBtn" style="margin-top:6px;">+ Add Bullet</button>
+          <p class="muted" style="font-weight:600;margin-top:16px;margin-bottom:6px;">Content added so far:</p>
+          <div id="prodSizeGuideBlockList"></div>
+        </div>
+      </div>
+
+      <button class="btn" id="addProductBtn" style="margin-top:20px;">Add Product</button>
+      <span class="muted" id="addProductStatus" style="margin-left:10px;"></span>
+    </div>
+
+    <div class="tab-panel" data-panel="manage" style="display:none;">
+      <h2>Manage Products</h2>
+      <div id="productList"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="categories" style="display:none;">
+      <h2>Categories</h2>
+      <p class="muted">Group your products, e.g. "Shirts", "Pants", "Hats".</p>
+      <label>Category name</label>
+      <input id="newCategoryName" placeholder="Category name" style="max-width:280px;"/>
+      <label style="margin-top:12px;">Category photo <span class="muted" id="categoryImgNote" style="font-weight:400;"></span></label>
+      <input type="file" id="newCategoryImageFile" accept="image/*" style="max-width:280px;"/>
+      <div id="newCategoryUploadProgress" class="upload-progress-wrap" style="display:none;"></div>
+      <div id="newCategoryImgPreview"></div>
+      <button class="btn" id="addCategoryBtn" style="margin-top:14px;">+ Add Category</button>
+      <div id="categoryList" style="margin-top:20px;"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="groups" style="display:none;">
+      <h2>Category Sections</h2>
+      <p class="muted">Create named sections for your homepage — like "Top Deals" or "Summer Sale" — then add specific products under each one. Available on the Pro plan.</p>
+      <div id="groupsLockedNote" class="fee-note" style="display:none;">🔒 Upgrade to the Pro plan to add custom homepage sections.</div>
+      <div id="groupsPanelBody" style="display:none;">
+        <label>Section title</label>
+        <input id="newGroupTitle" placeholder='e.g. "Top Deals"' style="max-width:320px;"/>
+        <button class="btn" id="addGroupBtn" style="margin-top:14px;">+ Create Section</button>
+        <p class="muted" style="font-weight:600;margin-top:24px;margin-bottom:8px;">Your sections:</p>
+        <div id="groupList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="sliding" style="display:none;">
+      <h2>Sliding Products</h2>
+      <div class="card" style="margin-bottom:24px;background:#FFF3EC;border-color:#ffd9c7;">
+        <p style="margin:0;">This creates a <strong>horizontally-scrolling row of products</strong> on your homepage, with left/right arrows so customers can slide through them — great for spotlighting new arrivals, trending items, or anything else you want to feature. You choose the name and exactly which products appear. Available on the Pro plan.</p>
+      </div>
+      <div id="slidingLockedNote" class="fee-note" style="display:none;">🔒 Upgrade to the Pro plan to add sliding product rows.</div>
+      <div id="slidingPanelBody" style="display:none;">
+        <label>Row title</label>
+        <input id="newSlidingTitle" placeholder='e.g. "New Arrivals" or "Trending Now"' style="max-width:320px;"/>
+        <button class="btn" id="addSlidingBtn" style="margin-top:14px;">+ Create Sliding Row</button>
+        <p class="muted" style="font-weight:600;margin-top:24px;margin-bottom:8px;">Your sliding rows:</p>
+        <div id="slidingList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="coupons" style="display:none;">
+      <h2>Coupons</h2>
+      <p class="muted">Create discount codes customers can apply at checkout. Available on the Starter plan and above.</p>
+      <div id="couponsLockedNote" class="fee-note" style="display:none;">🔒 Upgrade to the Starter plan or above to create coupons.</div>
+      <div id="couponsPanelBody" style="display:none;">
+        <label>Coupon code</label>
+        <input id="newCouponCode" placeholder='e.g. "WELCOME10"' style="max-width:220px;text-transform:uppercase;"/>
+        <label style="margin-top:12px;">Discount type</label>
+        <select id="newCouponType" style="max-width:220px;">
+          <option value="percent">Percentage off</option>
+          <option value="fixed">Fixed amount off (₹)</option>
+          <option value="free_shipping">Free shipping</option>
+        </select>
+        <label style="margin-top:12px;">Value <span class="muted" style="font-weight:400;">(% or ₹ depending on type above)</span></label>
+        <input id="newCouponValue" type="number" placeholder="e.g. 10" style="max-width:220px;"/>
+        <label style="margin-top:12px;">Minimum cart value (optional)</label>
+        <input id="newCouponMinCart" type="number" placeholder="e.g. 499" style="max-width:220px;"/>
+        <label style="margin-top:12px;">Expiry date (optional)</label>
+        <input id="newCouponExpiry" type="date" style="max-width:220px;"/>
+        <label style="margin-top:12px;">Usage limit (optional) <span class="muted" style="font-weight:400;">— blank means unlimited</span></label>
+        <input id="newCouponUsageLimit" type="number" placeholder="e.g. 100" style="max-width:220px;"/>
+        <button class="btn" id="addCouponBtn" style="margin-top:16px;">+ Create Coupon</button>
+        <p class="muted" style="font-weight:600;margin-top:24px;margin-bottom:8px;">Your coupons:</p>
+        <div id="couponList"></div>
+      </div>
+    </div>
+
+    <div class="tab-panel" data-panel="payment" style="display:none;">
+      <h2>Payment Method</h2>
+      <p class="muted">Paste a Razorpay Payment Link here — customers are sent here to pay after checkout.</p>
+      <div class="fee-note" style="margin-bottom:16px;">
+        ⚠️ Important: create this in Razorpay under <strong>Payment Links</strong> (not Payment Pages), and
+        set it to accept a <strong>flexible/custom amount</strong> — not a fixed price. Your order totals will
+        vary, so a fixed-amount link won't work correctly.
+      </div>
+      <label>Payment link</label>
+      <input id="paymentLink" placeholder="https://rzp.io/l/your-link"/>
+
+      <label style="margin-top:20px;display:block;">WhatsApp number for order alerts</label>
+      <p class="muted" style="margin:2px 0 8px;">We'll send you a WhatsApp message with the products, total, and payment method every time a customer places an order. This is free and automatic — just add your number.</p>
+      <input id="whatsappNumber" placeholder="e.g. 9876543210"/>
+
+      <button class="btn" id="savePaymentBtn" style="margin-top:16px;">Save</button>
+      <span class="muted" id="paymentStatus" style="margin-left:10px;"></span>
+      <div class="fee-note" style="margin-top:20px;" id="paymentFeeNote"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="orders" style="display:none;">
+      <h2>Orders</h2>
+      <div id="orderList"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="finance" style="display:none;">
+      <h2>Finance / Payouts</h2>
+      <p class="muted">Exactly what BuddySite charges you on each sale, and what you take home. This is a platform commission — it is not GST or any government tax, and it doesn't replace whatever tax you may owe on your own sales.</p>
+      <div class="analytics-grid" id="financeSummaryGrid"></div>
+      <h3 style="margin-top:28px;">Per-order breakdown</h3>
+      <div id="financeLedger"></div>
+    </div>
+
+    <div class="tab-panel" data-panel="analytics" style="display:none;">
+      <h2>Analytics</h2>
+      <p class="muted">A quick summary of how your store is doing, built from your orders.</p>
+      <div class="analytics-grid">
+        <div class="analytics-card"><div class="analytics-label">Today's Sales</div><div class="analytics-value" id="anaTodaySales">₹0</div></div>
+        <div class="analytics-card"><div class="analytics-label">Total Orders</div><div class="analytics-value" id="anaTotalOrders">0</div></div>
+        <div class="analytics-card"><div class="analytics-label">Average Order Value</div><div class="analytics-value" id="anaAOV">₹0</div></div>
+        <div class="analytics-card"><div class="analytics-label">Total Revenue</div><div class="analytics-value" id="anaTotalRevenue">₹0</div></div>
+      </div>
+      <h3 style="margin-top:28px;">Top Products</h3>
+      <div id="anaTopProducts"></div>
+      <h3 style="margin-top:28px;">Revenue, Last 7 Days</h3>
+      <div id="anaRevenueChart" class="revenue-chart"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+API.requireLogin();
+const params = new URLSearchParams(location.search);
+const siteId = params.get('id');
+let site = null;
+let plan = null;
+let uploadedBgUrl = '', uploadedBgType = 'image';
+let uploadedLogoVideoUrl = '';
+let selectedStoreTheme = 'simple';
+const STORE_THEME_INFO = {
+  simple: { name: 'Simple', desc: 'Warm, friendly colors.' },
+  bold: { name: 'Bold', desc: 'Black & white, high contrast.' },
+  aesthetic: { name: 'Aesthetic', desc: 'Elegant, fully professional.' }
+};
+// Mirrors the preset defaults in server.js's getTheme() -- used only to
+// pre-fill the color pickers with sensible starting colors; the actual
+// rendering logic lives entirely server-side.
+const STORE_THEME_DEFAULT_COLORS = {
+  simple: { accent: '#FF6A88', btnBg: '#FF6A88', btnText: '#ffffff', bg: '#FFF9F5' },
+  bold: { accent: '#FFFFFF', btnBg: '#FFFFFF', btnText: '#0B0B0B', bg: '#0B0B0B' },
+  aesthetic: { accent: '#4A5D4A', btnBg: '#2B2B2B', btnText: '#FAF8F5', bg: '#FAF8F5' }
+};
+
+function renderStoreThemeCards() {
+  const wrap = document.getElementById('storeThemeCards');
+  wrap.innerHTML = Object.keys(STORE_THEME_INFO).map(key => {
+    const info = STORE_THEME_INFO[key];
+    const unlocked = plan.availableThemes.includes(key);
+    const isSelected = selectedStoreTheme === key;
+    return `
+      <div onclick="${unlocked ? `selectStoreTheme('${key}')` : ''}" style="border:2px solid ${isSelected ? '#FF6A88' : '#F3E3DC'};border-radius:12px;padding:14px;text-align:center;cursor:${unlocked ? 'pointer' : 'not-allowed'};opacity:${unlocked ? '1' : '.45'};">
+        <strong style="font-size:.9rem;">${info.name}</strong>
+        <p class="muted" style="font-size:.75rem;margin:6px 0 0;">${info.desc}</p>
+        ${!unlocked ? '<p style="font-size:.7rem;color:#FF6A88;margin:6px 0 0;">🔒 Upgrade to unlock</p>' : ''}
+      </div>`;
+  }).join('');
+}
+
+function selectStoreTheme(key) {
+  selectedStoreTheme = key;
+  renderStoreThemeCards();
+  populateStoreColorInputs(); // defaults change with the theme -- refresh pickers to match, unless the seller already overrode them
+}
+
+function populateStoreColorInputs() {
+  const defaults = STORE_THEME_DEFAULT_COLORS[selectedStoreTheme] || STORE_THEME_DEFAULT_COLORS.simple;
+  const custom = (site && site.customColors) || {};
+  document.getElementById('colorAccent').value = custom.accent || defaults.accent;
+  document.getElementById('colorBtnBg').value = custom.btnBg || defaults.btnBg;
+  document.getElementById('colorBtnText').value = custom.btnText || defaults.btnText;
+  document.getElementById('colorBg').value = custom.bg || defaults.bg;
+}
+
+async function saveStoreColors() {
+  const msg = document.getElementById('colorsMsg');
+  try {
+    const { site: updated } = await API.call('/api/sites/' + siteId + '/colors', {
+      method: 'PUT',
+      body: JSON.stringify({
+        accent: document.getElementById('colorAccent').value,
+        btnBg: document.getElementById('colorBtnBg').value,
+        btnText: document.getElementById('colorBtnText').value,
+        bg: document.getElementById('colorBg').value
+      })
+    });
+    site = updated;
+    msg.className = 'msg'; msg.style.display = 'block'; msg.style.background = '#ecfdf3'; msg.style.color = '#067647';
+    msg.textContent = 'Colors saved! Visit your storefront to see them live.';
+  } catch (err) {
+    msg.style.display = 'block'; msg.style.background = '#fef2f2'; msg.style.color = '#b42318';
+    msg.textContent = err.message;
+  }
+}
+
+async function resetStoreColors() {
+  const { site: updated } = await API.call('/api/sites/' + siteId + '/colors', {
+    method: 'PUT',
+    body: JSON.stringify({ accent: '', btnBg: '', btnText: '', bg: '' })
+  });
+  site = updated;
+  populateStoreColorInputs();
+  const msg = document.getElementById('colorsMsg');
+  msg.className = 'msg'; msg.style.display = 'block'; msg.style.background = '#ecfdf3'; msg.style.color = '#067647';
+  msg.textContent = 'Reset to theme defaults.';
+}
+
+document.querySelectorAll('.admin-side a').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    document.querySelectorAll('.admin-side a').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    document.querySelector(`.tab-panel[data-panel="${link.dataset.tab}"]`).style.display = 'block';
+    if (link.dataset.tab === 'manage') renderProductList();
+    if (link.dataset.tab === 'categories') renderCategoryList();
+    if (link.dataset.tab === 'orders') loadOrders();
+    if (link.dataset.tab === 'finance') loadFinance();
+    if (link.dataset.tab === 'hero' && isPro) renderSlideList();
+    if (link.dataset.tab === 'groups' && isPro) renderGroupList();
+    if (link.dataset.tab === 'sliding' && isPro) renderSlidingList();
+    if (link.dataset.tab === 'add') renderProdSectionsChecks();
+    if (link.dataset.tab === 'coupons' && plan && plan.coupons) renderCouponList();
+    if (link.dataset.tab === 'analytics') loadAnalytics();
+  });
+});
+
+let isPro = false;
+
+async function load() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const { user } = await API.call('/api/auth/me');
+  const { plans } = await API.call('/api/billing/plans');
+  plan = plans.find(p => p.key === user.plan) || plans[0];
+  isPro = plan.key === 'pro';
+
+  document.getElementById('storeNameLabel').textContent = site.store_name;
+  document.getElementById('storeName').value = site.store_name;
+  document.getElementById('storeDesc').value = site.description || '';
+  document.getElementById('descAlign').value = site.description_align || 'center';
+  document.getElementById('descSize').value = site.description_size || 'medium';
+  document.getElementById('descFont').value = site.description_font || 'inter';
+  document.getElementById('publishToggle').checked = !!site.published;
+  document.getElementById('cartPositionSelect').value = site.cartPosition || 'bottom';
+  document.getElementById('storeNamePositionSelect').value = site.storeNamePosition || 'left';
+  document.getElementById('logoVideoPositionSelect').value = site.logoVideoPosition || 'left';
+  uploadedLogoVideoUrl = site.logoVideoUrl || '';
+  if (uploadedLogoVideoUrl) {
+    document.getElementById('logoVideoPreviewWrap').innerHTML = `<video src="${uploadedLogoVideoUrl}" class="file-preview" autoplay muted loop playsinline style="max-width:200px;"></video>`;
+  }
+  document.getElementById('paymentLink').value = site.payment_link || '';
+  document.getElementById('whatsappNumber').value = site.whatsapp_number || '';
+  document.getElementById('viewStoreBtn').href = '/store/' + site.slug;
+  uploadedBgUrl = site.background_url; uploadedBgType = site.background_type;
+  if (uploadedBgUrl) showBgPreview(uploadedBgUrl, uploadedBgType);
+  document.getElementById('feeNote').textContent =
+    `BuddySite commission: ${plan.platformFeePercent}% of each sale's commissionable amount goes to BuddySite (your ${plan.name} plan's rate). This is a platform commission, not GST or any other tax. See Finance / Payouts for the exact breakdown on every order.`;
+  document.getElementById('paymentFeeNote').textContent =
+    `💡 On the ${plan.name} plan, BuddySite charges a ${plan.platformFeePercent}% commission on each sale, calculated automatically and shown per-order in Finance / Payouts. You still collect payment yourself via your connected payment link — please account for the commission when withdrawing your earnings until automatic payment-provider settlement is wired in.`;
+  selectedStoreTheme = site.theme || 'simple';
+  renderStoreThemeCards();
+  populateStoreColorInputs();
+
+  document.getElementById('categoriesLink').style.display = 'block';
+  document.getElementById('prodCategoryLabel').style.display = 'block';
+  document.getElementById('prodCategory').style.display = 'block';
+  renderCategoryOptions();
+
+  const imgFileInput = document.getElementById('newCategoryImageFile');
+  if (plan.categoryImages) {
+    imgFileInput.disabled = false;
+    document.getElementById('categoryImgNote').textContent = '';
+  } else {
+    imgFileInput.disabled = true;
+    document.getElementById('categoryImgNote').textContent = '(Upgrade to Starter to add photos)';
+  }
+
+  document.getElementById('heroLockedNote').style.display = isPro ? 'none' : 'block';
+  document.getElementById('heroPanelBody').style.display = isPro ? 'block' : 'none';
+  document.getElementById('groupsLockedNote').style.display = isPro ? 'none' : 'block';
+  document.getElementById('groupsPanelBody').style.display = isPro ? 'block' : 'none';
+  document.getElementById('slidingLockedNote').style.display = isPro ? 'none' : 'block';
+  document.getElementById('slidingPanelBody').style.display = isPro ? 'block' : 'none';
+  if (isPro) { renderSlideList(); renderGroupList(); renderSlidingList(); }
+  renderProdSectionsChecks();
+
+  document.getElementById('couponsLockedNote').style.display = plan.coupons ? 'none' : 'block';
+  document.getElementById('couponsPanelBody').style.display = plan.coupons ? 'block' : 'none';
+  if (plan.coupons) renderCouponList();
+
+  const social = site.socialLinks || {};
+  document.getElementById('socialInstagram').value = social.instagram || '';
+  document.getElementById('socialFacebook').value = social.facebook || '';
+  document.getElementById('socialTwitter').value = social.twitter || '';
+  document.getElementById('socialYoutube').value = social.youtube || '';
+  document.getElementById('socialTiktok').value = social.tiktok || '';
+  document.getElementById('socialWebsite').value = social.website || '';
+
+  setupInfoPage('about', site.aboutPage);
+  setupInfoPage('contact', site.contactPage);
+  setupInfoPage('brand', site.brandStory);
+}
+
+// ---------- About Us / Contact Us pages (shared logic for both) ----------
+const infoPageState = { about: { blocks: [], bgUrl: '', bgType: 'image' }, contact: { blocks: [], bgUrl: '', bgType: 'image' }, brand: { blocks: [], bgUrl: '', bgType: 'image' } };
+
+function setupInfoPage(key, pageData) {
+  infoPageState[key].blocks = (pageData && pageData.content) ? JSON.parse(JSON.stringify(pageData.content)) : [];
+  infoPageState[key].bgUrl = (pageData && pageData.background_url) || '';
+  infoPageState[key].bgType = (pageData && pageData.background_type) || 'image';
+
+  // Video backgrounds are Grow/Pro only
+  const videoInput = document.getElementById(key + 'BgVideoFile');
+  const videoNote = document.getElementById(key + 'VideoNote');
+  if (plan.videoBackgrounds) {
+    videoInput.style.display = 'block';
+    videoNote.textContent = 'You can upload an image above, or a short video here instead.';
+  } else {
+    videoInput.style.display = 'none';
+    videoNote.textContent = 'Video backgrounds are available on the Grow plan and above.';
+  }
+
+  if (infoPageState[key].bgUrl) showInfoBgPreview(key);
+  renderInfoBlockList(key);
+}
+
+function showInfoBgPreview(key) {
+  const state = infoPageState[key];
+  const wrap = document.getElementById(key + 'BgPreviewWrap');
+  wrap.innerHTML = state.bgType === 'video'
+    ? `<video src="${state.bgUrl}" class="file-preview" muted autoplay loop></video>`
+    : `<img src="${state.bgUrl}" class="file-preview"/>`;
+}
+
+// Shrinks large photos client-side before upload (long side capped, re-encoded
+// as JPEG) so uploads are faster -- skips anything already small enough.
+function compressImageFile(file, maxDim, quality) {
+  maxDim = maxDim || 1600;
+  quality = quality || 0.82;
+  return new Promise((resolve) => {
+    if (!file.type || !file.type.startsWith('image/') || file.type === 'image/svg+xml' || file.type === 'image/gif') { resolve(file); return; }
+    if (file.size < 500 * 1024) { resolve(file); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const width = img.width, height = img.height;
+        if (width <= maxDim && height <= maxDim) { resolve(file); return; }
+        const scale = maxDim / Math.max(width, height);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(width * scale);
+        canvas.height = Math.round(height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+          if (!blob || blob.size >= file.size) { resolve(file); return; }
+          resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+        }, 'image/jpeg', quality);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+}
+
+// Uploads with real progress (0-100) via XHR, since fetch() can't report
+// upload progress. onProgress is optional.
+function uploadFileWithProgress(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/upload');
+    xhr.setRequestHeader('Authorization', 'Bearer ' + API.token());
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (data.error) { reject(new Error(data.error)); return; }
+        resolve(data);
+      } catch (err) { reject(new Error('Upload failed. Please try again.')); }
+    };
+    xhr.onerror = () => reject(new Error('Upload failed. Please check your connection and try again.'));
+    const formData = new FormData();
+    formData.append('file', file);
+    xhr.send(formData);
+  });
+}
+
+async function uploadInfoFile(file, onProgress) {
+  const compressed = await compressImageFile(file);
+  return uploadFileWithProgress(compressed, onProgress);
+}
+
+['about', 'contact', 'brand'].forEach(key => {
+  document.getElementById(key + 'BgFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const progressEl = document.getElementById(key + 'BgUploadProgress');
+    progressEl.style.display = 'block';
+    progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="${key}BgProgFill"></div></div><div class="upload-progress-text" id="${key}BgProgText">Uploading… 0%</div>`;
+    try {
+      const data = await uploadInfoFile(file, (pct) => {
+        document.getElementById(`${key}BgProgFill`).style.width = pct + '%';
+        document.getElementById(`${key}BgProgText`).textContent = `Uploading… ${pct}%`;
+      });
+      infoPageState[key].bgUrl = data.url; infoPageState[key].bgType = 'image';
+      showInfoBgPreview(key);
+      progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 file uploaded</div>`;
+      setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+    } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+  });
+
+  document.getElementById(key + 'BgVideoFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!plan.videoBackgrounds) { alert('Video backgrounds are available on the Grow plan and above.'); return; }
+    const progressEl = document.getElementById(key + 'BgUploadProgress');
+    progressEl.style.display = 'block';
+    progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="${key}BgProgFill"></div></div><div class="upload-progress-text" id="${key}BgProgText">Uploading… 0%</div>`;
+    try {
+      const data = await uploadInfoFile(file, (pct) => {
+        document.getElementById(`${key}BgProgFill`).style.width = pct + '%';
+        document.getElementById(`${key}BgProgText`).textContent = `Uploading… ${pct}%`;
+      });
+      infoPageState[key].bgUrl = data.url; infoPageState[key].bgType = 'video';
+      showInfoBgPreview(key);
+      progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 file uploaded</div>`;
+      setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+    } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+  });
+
+  document.getElementById(key + 'AddParagraphBtn').addEventListener('click', () => {
+    const input = document.getElementById(key + 'ParagraphInput');
+    if (!input.value.trim()) return;
+    infoPageState[key].blocks.push({ type: 'paragraph', text: input.value.trim() });
+    input.value = '';
+    renderInfoBlockList(key);
+  });
+
+  document.getElementById(key + 'ImageFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const progressEl = document.getElementById(key + 'ImageUploadProgress');
+    progressEl.style.display = 'block';
+    progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="${key}ImgProgFill"></div></div><div class="upload-progress-text" id="${key}ImgProgText">Uploading… 0%</div>`;
+    try {
+      const data = await uploadInfoFile(file, (pct) => {
+        document.getElementById(`${key}ImgProgFill`).style.width = pct + '%';
+        document.getElementById(`${key}ImgProgText`).textContent = `Uploading… ${pct}%`;
+      });
+      const align = document.getElementById(key + 'ImageAlign').value;
+      infoPageState[key].blocks.push({ type: 'image', url: data.url, align });
+      renderInfoBlockList(key);
+      progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 photo uploaded</div>`;
+      setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+      e.target.value = '';
+    } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+  });
+
+  document.getElementById(key + 'SaveBtn').addEventListener('click', async () => {
+    const statusEl = document.getElementById(key + 'Status');
+    statusEl.textContent = 'Saving...';
+    // Safety net: if there's text still sitting in the paragraph box that
+    // wasn't explicitly added, include it anyway so nothing gets lost.
+    const leftoverInput = document.getElementById(key + 'ParagraphInput');
+    if (leftoverInput && leftoverInput.value.trim()) {
+      infoPageState[key].blocks.push({ type: 'paragraph', text: leftoverInput.value.trim() });
+      leftoverInput.value = '';
+      renderInfoBlockList(key);
+    }
+    try {
+      await API.call('/api/sites/' + siteId + '/pages/' + key, {
+        method: 'PUT',
+        body: JSON.stringify({
+          content: infoPageState[key].blocks,
+          background_url: infoPageState[key].bgUrl,
+          background_type: infoPageState[key].bgType
+        })
+      });
+      statusEl.textContent = 'Saved ✓';
+      setTimeout(() => statusEl.textContent = '', 2000);
+    } catch (err) { statusEl.textContent = ''; alert(err.message); }
+  });
+});
+
+function renderInfoBlockList(key) {
+  const list = document.getElementById(key + 'BlockList');
+  const blocks = infoPageState[key].blocks;
+  if (blocks.length === 0) { list.innerHTML = '<p class="muted">No content yet — add a paragraph or photo above.</p>'; return; }
+  list.innerHTML = blocks.map((b, i) => `
+    <div class="product-row">
+      <div style="flex:1;">
+        ${b.type === 'paragraph' ? `<span class="muted" style="font-size:.8rem;">Paragraph:</span> ${b.text.slice(0, 80)}${b.text.length > 80 ? '…' : ''}` : `<span class="muted" style="font-size:.8rem;">Photo (${b.align || 'center'})</span><br/><img src="${b.url}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;margin-top:4px;"/>`}
+      </div>
+      <button class="icon-btn" onclick="removeInfoBlock('${key}', ${i})">Remove</button>
+    </div>
+  `).join('');
+}
+
+function removeInfoBlock(key, index) {
+  infoPageState[key].blocks.splice(index, 1);
+  renderInfoBlockList(key);
+}
+
+function showBgPreview(url, type) {
+  const wrap = document.getElementById('bgPreviewWrap');
+  wrap.innerHTML = type === 'video'
+    ? `<video src="${url}" class="file-preview" muted autoplay loop></video>`
+    : `<img src="${url}" class="file-preview"/>`;
+}
+
+document.getElementById('bgFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const progressEl = document.getElementById('bgUploadProgress');
+  progressEl.style.display = 'block';
+  progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="bgProgFill"></div></div><div class="upload-progress-text" id="bgProgText">Uploading… 0%</div>`;
+  try {
+    const data = await uploadInfoFile(file, (pct) => {
+      document.getElementById('bgProgFill').style.width = pct + '%';
+      document.getElementById('bgProgText').textContent = `Uploading… ${pct}%`;
+    });
+    uploadedBgUrl = data.url; uploadedBgType = data.type;
+    showBgPreview(uploadedBgUrl, uploadedBgType);
+    progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 file uploaded</div>`;
+    setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+  } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+});
+
+document.getElementById('logoVideoFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const progressEl = document.getElementById('logoVideoUploadProgress');
+  progressEl.style.display = 'block';
+  progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="logoVideoProgFill"></div></div><div class="upload-progress-text" id="logoVideoProgText">Uploading… 0%</div>`;
+  try {
+    const data = await uploadInfoFile(file, (pct) => {
+      document.getElementById('logoVideoProgFill').style.width = pct + '%';
+      document.getElementById('logoVideoProgText').textContent = `Uploading… ${pct}%`;
+    });
+    uploadedLogoVideoUrl = data.url;
+    document.getElementById('logoVideoPreviewWrap').innerHTML = `<video src="${uploadedLogoVideoUrl}" class="file-preview" autoplay muted loop playsinline style="max-width:200px;"></video>`;
+    progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 video uploaded</div>`;
+    setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+  } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+});
+
+document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
+  const status = document.getElementById('settingsStatus');
+  status.textContent = 'Saving...';
+  try {
+    await API.call('/api/sites/' + siteId, {
+      method: 'PUT',
+      body: JSON.stringify({
+        store_name: document.getElementById('storeName').value,
+        description: document.getElementById('storeDesc').value,
+        description_align: document.getElementById('descAlign').value,
+        description_size: document.getElementById('descSize').value,
+        description_font: document.getElementById('descFont').value,
+        background_url: uploadedBgUrl,
+        background_type: uploadedBgType,
+        theme: selectedStoreTheme,
+        cartPosition: document.getElementById('cartPositionSelect').value,
+        storeNamePosition: document.getElementById('storeNamePositionSelect').value,
+        logoVideoUrl: uploadedLogoVideoUrl,
+        logoVideoPosition: document.getElementById('logoVideoPositionSelect').value,
+        published: document.getElementById('publishToggle').checked
+      })
+    });
+    status.textContent = 'Saved ✓';
+    setTimeout(() => status.textContent = '', 2000);
+  } catch (err) { status.textContent = ''; alert(err.message); }
+});
+
+// ---------- Sizes (chip/token builder, shared by Add + Edit forms) ----------
+const prodSizesState = { prod: [], editProd: [] };
+function renderSizeChips(prefix) {
+  document.getElementById(prefix + 'SizeChips').innerHTML = prodSizesState[prefix].map((s, i) => `
+    <span class="size-chip">${s} <button type="button" onclick="removeSizeChip('${prefix}', ${i})">✕</button></span>
+  `).join('');
+}
+function addSizeChip(prefix) {
+  const input = document.getElementById(prefix + 'SizeInput');
+  const val = input.value.trim();
+  if (!val) return;
+  prodSizesState[prefix].push(val);
+  input.value = '';
+  renderSizeChips(prefix);
+  input.focus();
+}
+function removeSizeChip(prefix, i) {
+  prodSizesState[prefix].splice(i, 1);
+  renderSizeChips(prefix);
+}
+['prod', 'editProd'].forEach(prefix => {
+  document.getElementById(prefix + 'SizeAddBtn').addEventListener('click', () => addSizeChip(prefix));
+  document.getElementById(prefix + 'SizeInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); addSizeChip(prefix); }
+  });
+});
+
+// ---------- Pricing: Scratch price / Off % / Final price auto-calc ----------
+function wireAutoPricing(prefix) {
+  const scratchEl = document.getElementById(prefix + 'OriginalPrice');
+  const offEl = document.getElementById(prefix + 'OffPercent');
+  const finalEl = document.getElementById(prefix + 'Price');
+  function nums() { return [parseFloat(scratchEl.value), parseFloat(offEl.value), parseFloat(finalEl.value)]; }
+  scratchEl.addEventListener('input', () => {
+    const [scratch, off, fin] = nums();
+    if (!isNaN(scratch) && !isNaN(off)) finalEl.value = Math.round(scratch * (1 - off / 100));
+    else if (!isNaN(scratch) && !isNaN(fin) && scratch > fin) offEl.value = Math.round((1 - fin / scratch) * 100);
+  });
+  offEl.addEventListener('input', () => {
+    const [scratch, off, fin] = nums();
+    if (!isNaN(scratch) && !isNaN(off)) finalEl.value = Math.round(scratch * (1 - off / 100));
+    else if (!isNaN(fin) && !isNaN(off) && off < 100) scratchEl.value = Math.round(fin / (1 - off / 100));
+  });
+  finalEl.addEventListener('input', () => {
+    const [scratch, off, fin] = nums();
+    if (!isNaN(fin) && !isNaN(off) && off < 100) scratchEl.value = Math.round(fin / (1 - off / 100));
+    else if (!isNaN(scratch) && !isNaN(fin) && scratch > fin) offEl.value = Math.round((1 - fin / scratch) * 100);
+  });
+}
+wireAutoPricing('prod');
+wireAutoPricing('editProd');
+
+// ---------- Size Guide (optional per-product block editor: paragraph / photo / bullet) ----------
+const sizeGuideState = {
+  prod: { title: '', blocks: [] },
+  editProd: { title: '', blocks: [] }
+};
+function renderSizeGuideBlockList(prefix) {
+  const blocks = sizeGuideState[prefix].blocks;
+  const list = document.getElementById(prefix + 'SizeGuideBlockList');
+  if (!blocks.length) { list.innerHTML = '<p class="muted" style="font-size:.85rem;">Nothing added yet.</p>'; return; }
+  list.innerHTML = blocks.map((b, i) => {
+    const label = b.type === 'paragraph' ? ('📝 ' + b.text.slice(0, 50))
+      : b.type === 'image' ? '🖼 Photo'
+      : ('• ' + (b.heading ? b.heading + ' — ' : '') + b.text.slice(0, 50));
+    return `<div class="size-guide-block-row"><span>${label}</span><button type="button" class="icon-btn" onclick="removeSizeGuideBlock('${prefix}', ${i})">Remove</button></div>`;
+  }).join('');
+}
+function removeSizeGuideBlock(prefix, i) {
+  sizeGuideState[prefix].blocks.splice(i, 1);
+  renderSizeGuideBlockList(prefix);
+}
+function resetSizeGuideState(prefix) {
+  sizeGuideState[prefix] = { title: '', blocks: [] };
+  document.getElementById(prefix + 'SizeGuideTitle').value = '';
+  document.getElementById(prefix + 'SizeGuideParagraph').value = '';
+  document.getElementById(prefix + 'SizeGuideBulletHeading').value = '';
+  document.getElementById(prefix + 'SizeGuideBulletText').value = '';
+  renderSizeGuideBlockList(prefix);
+}
+['prod', 'editProd'].forEach(prefix => {
+  document.getElementById(prefix + 'ToggleSizeGuideBtn').addEventListener('click', () => {
+    const wrap = document.getElementById(prefix + 'SizeGuideWrap');
+    wrap.style.display = wrap.style.display === 'none' ? 'block' : 'none';
+  });
+  document.getElementById(prefix + 'SizeGuideAddParaBtn').addEventListener('click', () => {
+    const el = document.getElementById(prefix + 'SizeGuideParagraph');
+    const text = el.value.trim();
+    if (!text) return;
+    sizeGuideState[prefix].blocks.push({ type: 'paragraph', text });
+    el.value = '';
+    renderSizeGuideBlockList(prefix);
+  });
+  document.getElementById(prefix + 'SizeGuideAddBulletBtn').addEventListener('click', () => {
+    const headingEl = document.getElementById(prefix + 'SizeGuideBulletHeading');
+    const textEl = document.getElementById(prefix + 'SizeGuideBulletText');
+    const text = textEl.value.trim();
+    if (!text) { alert('Please enter the bullet text.'); return; }
+    sizeGuideState[prefix].blocks.push({ type: 'bullet', heading: headingEl.value.trim(), text });
+    headingEl.value = ''; textEl.value = '';
+    renderSizeGuideBlockList(prefix);
+  });
+  document.getElementById(prefix + 'SizeGuideImageFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const progressEl = document.getElementById(prefix + 'SizeGuideUploadProgress');
+    progressEl.style.display = 'block';
+    progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="${prefix}SgProgFill"></div></div><div class="upload-progress-text" id="${prefix}SgProgText">Uploading… 0%</div>`;
+    try {
+      const data = await uploadInfoFile(file, (pct) => {
+        document.getElementById(`${prefix}SgProgFill`).style.width = pct + '%';
+        document.getElementById(`${prefix}SgProgText`).textContent = `Uploading… ${pct}%`;
+      });
+      sizeGuideState[prefix].blocks.push({ type: 'image', url: data.url });
+      renderSizeGuideBlockList(prefix);
+      progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 photo uploaded</div>`;
+      setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+    } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+    e.target.value = '';
+  });
+});
+
+let uploadedProdImgs = [];
+function renderProdPreview() {
+  document.getElementById('prodPreviewWrap').innerHTML = uploadedProdImgs.map((url, i) => `
+    <div style="position:relative;">
+      <img src="${url}" class="file-preview" style="margin:0;"/>
+      <button type="button" onclick="removeProdImg(${i})" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#E8496A;color:#fff;border:none;cursor:pointer;font-size:.8rem;line-height:1;">✕</button>
+    </div>
+  `).join('');
+}
+function removeProdImg(i) { uploadedProdImgs.splice(i, 1); renderProdPreview(); }
+
+document.getElementById('prodFile').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  const progressEl = document.getElementById('prodUploadProgress');
+  progressEl.style.display = 'block';
+  try {
+    for (let i = 0; i < files.length; i++) {
+      progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="prodProgFill-${i}"></div></div><div class="upload-progress-text" id="prodProgText-${i}">Uploading photo ${i + 1} of ${files.length}… 0%</div>`;
+      const compressed = await compressImageFile(files[i]);
+      const data = await uploadFileWithProgress(compressed, (pct) => {
+        const fill = document.getElementById(`prodProgFill-${i}`);
+        const text = document.getElementById(`prodProgText-${i}`);
+        if (fill) fill.style.width = pct + '%';
+        if (text) text.textContent = `Uploading photo ${i + 1} of ${files.length}… ${pct}%`;
+      });
+      uploadedProdImgs.push(data.url);
+      renderProdPreview();
+    }
+    progressEl.innerHTML = `<div class="upload-progress-done">✅ ${uploadedProdImgs.length} photo${uploadedProdImgs.length === 1 ? '' : 's'} uploaded</div>`;
+    setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+  } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+  e.target.value = '';
+});
+
+document.getElementById('addProductBtn').addEventListener('click', async () => {
+  const status = document.getElementById('addProductStatus');
+  const name = document.getElementById('prodName').value;
+  const price = document.getElementById('prodPrice').value;
+  if (!name || !price) { alert('Please enter a product name and final price.'); return; }
+  status.textContent = 'Adding...';
+  try {
+    const { product } = await API.call('/api/sites/' + siteId + '/products', {
+      method: 'POST',
+      body: JSON.stringify({
+        name, price,
+        originalPrice: document.getElementById('prodOriginalPrice').value || 0,
+        images: uploadedProdImgs,
+        sizes: prodSizesState.prod,
+        color: document.getElementById('prodColor').value,
+        description: document.getElementById('prodDesc').value,
+        categoryId: document.getElementById('prodCategory').value || null,
+        sizeGuide: { title: document.getElementById('prodSizeGuideTitle').value, content: sizeGuideState.prod.blocks },
+        trackInventory: document.getElementById('prodTrackInventory').checked,
+        stock: document.getElementById('prodStock').value || 0
+      })
+    });
+    const selectedSections = Array.from(document.querySelectorAll('.prodSectionCheck:checked')).map(cb => cb.value);
+    for (const groupId of selectedSections) {
+      await API.call('/api/sites/' + siteId + '/category-groups/' + groupId + '/products', { method: 'POST', body: JSON.stringify({ productId: product.id }) });
+    }
+    status.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;color:#1a8a5f;padding:4px 12px;border-radius:100px;font-weight:600;">✅ Product added!</span>';
+    document.getElementById('prodName').value = '';
+    document.getElementById('prodPrice').value = '';
+    document.getElementById('prodOriginalPrice').value = '';
+    document.getElementById('prodTrackInventory').checked = false;
+    document.getElementById('prodStock').value = '';
+    document.getElementById('prodStockRow').style.display = 'none';
+    document.getElementById('prodOffPercent').value = '';
+    document.getElementById('prodColor').value = '';
+    document.getElementById('prodDesc').value = '';
+    document.getElementById('prodPreviewWrap').innerHTML = '';
+    document.getElementById('prodFile').value = '';
+    uploadedProdImgs = [];
+    prodSizesState.prod = [];
+    renderSizeChips('prod');
+    resetSizeGuideState('prod');
+    document.getElementById('prodSizeGuideWrap').style.display = 'none';
+    document.querySelectorAll('.prodSectionCheck').forEach(cb => cb.checked = false);
+    setTimeout(() => status.innerHTML = '', 2500);
+  } catch (err) { status.innerHTML = ''; alert(err.message); }
+});
+
+async function renderProductList() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const list = document.getElementById('productList');
+  if (site.products.length === 0) { list.innerHTML = '<p class="muted">No products yet.</p>'; return; }
+  list.innerHTML = site.products.map(p => {
+    const priceLabel = (p.originalPrice && p.originalPrice > p.price)
+      ? `₹${p.price} <span style="text-decoration:line-through;">₹${p.originalPrice}</span>`
+      : `₹${p.price}`;
+    const stockLabel = !p.trackInventory ? '' :
+      (p.stock <= 0
+        ? ' · <span style="color:#b42318;font-weight:700;">Out of stock</span>'
+        : ` · <span style="color:${p.stock <= 5 ? '#b54708' : 'inherit'};">${p.stock} in stock</span>`);
+    return `
+    <div class="product-row">
+      ${p.image ? `<img src="${p.image}"/>` : '<div class="noimg"></div>'}
+      <div style="flex:1;">
+        <strong>${p.name}</strong><br/>
+        <span class="muted">${priceLabel}${p.sizes && p.sizes.length ? ' · ' + p.sizes.join(', ') : ''}${p.color ? ' · ' + p.color : ''}${stockLabel}</span>
+      </div>
+      <button class="icon-btn" onclick="openEditProduct(${p.id})">Edit</button>
+      <button class="icon-btn" onclick="deleteProduct(${p.id})">Delete</button>
+    </div>
+  `;
+  }).join('');
+}
+
+async function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  await API.call('/api/sites/' + siteId + '/products/' + id, { method: 'DELETE' });
+  renderProductList();
+}
+
+let editingProductId = null;
+let editUploadedImgs = [];
+function renderEditProdPreview() {
+  document.getElementById('editProdPreviewWrap').innerHTML = editUploadedImgs.map((url, i) => `
+    <div style="position:relative;">
+      <img src="${url}" class="file-preview" style="margin:0;"/>
+      <button type="button" onclick="removeEditProdImg(${i})" style="position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#E8496A;color:#fff;border:none;cursor:pointer;font-size:.8rem;line-height:1;">✕</button>
+    </div>
+  `).join('');
+}
+function removeEditProdImg(i) { editUploadedImgs.splice(i, 1); renderEditProdPreview(); }
+
+async function openEditProduct(id) {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const p = site.products.find(p => p.id === id);
+  if (!p) return;
+  editingProductId = id;
+  editUploadedImgs = (p.images && p.images.length) ? p.images.slice() : (p.image ? [p.image] : []);
+  document.getElementById('editProdName').value = p.name;
+  document.getElementById('editProdPrice').value = p.price;
+  document.getElementById('editProdOriginalPrice').value = p.originalPrice || '';
+  document.getElementById('editProdOffPercent').value = (p.originalPrice && p.originalPrice > p.price) ? Math.round((1 - p.price / p.originalPrice) * 100) : '';
+  document.getElementById('editProdColor').value = p.color || '';
+  document.getElementById('editProdDesc').value = p.description || '';
+  document.getElementById('editProdTrackInventory').checked = !!p.trackInventory;
+  document.getElementById('editProdStock').value = (p.stock !== null && p.stock !== undefined) ? p.stock : '';
+  document.getElementById('editProdStockRow').style.display = p.trackInventory ? 'block' : 'none';
+  renderEditProdPreview();
+  document.getElementById('editProdFile').value = '';
+
+  prodSizesState.editProd = (p.sizes && p.sizes.length) ? p.sizes.slice() : (p.size ? [p.size] : []);
+  renderSizeChips('editProd');
+
+  sizeGuideState.editProd = { title: (p.sizeGuide && p.sizeGuide.title) || '', blocks: (p.sizeGuide && p.sizeGuide.content) ? p.sizeGuide.content.slice() : [] };
+  document.getElementById('editProdSizeGuideTitle').value = sizeGuideState.editProd.title;
+  document.getElementById('editProdSizeGuideParagraph').value = '';
+  document.getElementById('editProdSizeGuideBulletHeading').value = '';
+  document.getElementById('editProdSizeGuideBulletText').value = '';
+  renderSizeGuideBlockList('editProd');
+  document.getElementById('editProdSizeGuideWrap').style.display = sizeGuideState.editProd.blocks.length ? 'block' : 'none';
+
+  if (plan.categories) {
+    document.getElementById('editProdCategoryLabel').style.display = 'block';
+    const sel = document.getElementById('editProdCategory');
+    sel.style.display = 'block';
+    sel.innerHTML = '<option value="">No category</option>' + site.categories.map(c => `<option value="${c.id}" ${p.categoryId === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+  } else {
+    document.getElementById('editProdCategoryLabel').style.display = 'none';
+    document.getElementById('editProdCategory').style.display = 'none';
+  }
+
+  if (isPro && site.categoryGroups && site.categoryGroups.length) {
+    document.getElementById('editProdSectionsWrap').style.display = 'block';
+    document.getElementById('editProdSectionsChecks').innerHTML = site.categoryGroups.map(g => `
+      <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin:0;border:1px solid #F3E3DC;border-radius:100px;padding:6px 14px;">
+        <input type="checkbox" value="${g.id}" class="editProdSectionCheck" style="width:auto;" ${(g.productIds || []).includes(p.id) ? 'checked' : ''}/> ${g.title}
+      </label>
+    `).join('');
+  } else {
+    document.getElementById('editProdSectionsWrap').style.display = 'none';
+  }
+
+  document.getElementById('editProductModal').style.display = 'flex';
+}
+
+document.getElementById('editProdFile').addEventListener('change', async (e) => {
+  const files = Array.from(e.target.files || []);
+  if (!files.length) return;
+  const progressEl = document.getElementById('editProdUploadProgress');
+  progressEl.style.display = 'block';
+  try {
+    for (let i = 0; i < files.length; i++) {
+      progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="editProdProgFill-${i}"></div></div><div class="upload-progress-text" id="editProdProgText-${i}">Uploading photo ${i + 1} of ${files.length}… 0%</div>`;
+      const compressed = await compressImageFile(files[i]);
+      const data = await uploadFileWithProgress(compressed, (pct) => {
+        const fill = document.getElementById(`editProdProgFill-${i}`);
+        const text = document.getElementById(`editProdProgText-${i}`);
+        if (fill) fill.style.width = pct + '%';
+        if (text) text.textContent = `Uploading photo ${i + 1} of ${files.length}… ${pct}%`;
+      });
+      editUploadedImgs.push(data.url);
+      renderEditProdPreview();
+    }
+    progressEl.innerHTML = `<div class="upload-progress-done">✅ ${editUploadedImgs.length} photo${editUploadedImgs.length === 1 ? '' : 's'} uploaded</div>`;
+    setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+  } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+  e.target.value = '';
+});
+
+document.getElementById('cancelEditProductBtn').addEventListener('click', () => {
+  document.getElementById('editProductModal').style.display = 'none';
+});
+
+document.getElementById('saveEditProductBtn').addEventListener('click', async () => {
+  try {
+    await API.call('/api/sites/' + siteId + '/products/' + editingProductId, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name: document.getElementById('editProdName').value,
+        price: document.getElementById('editProdPrice').value,
+        originalPrice: document.getElementById('editProdOriginalPrice').value || 0,
+        images: editUploadedImgs,
+        sizes: prodSizesState.editProd,
+        color: document.getElementById('editProdColor').value,
+        description: document.getElementById('editProdDesc').value,
+        categoryId: document.getElementById('editProdCategory').value || null,
+        sizeGuide: { title: document.getElementById('editProdSizeGuideTitle').value, content: sizeGuideState.editProd.blocks },
+        trackInventory: document.getElementById('editProdTrackInventory').checked,
+        stock: document.getElementById('editProdStock').value || 0
+      })
+    });
+    if (isPro && site.categoryGroups && site.categoryGroups.length) {
+      const checked = new Set(Array.from(document.querySelectorAll('.editProdSectionCheck:checked')).map(cb => Number(cb.value)));
+      for (const g of site.categoryGroups) {
+        const shouldBeIn = checked.has(g.id);
+        const isIn = (g.productIds || []).includes(editingProductId);
+        if (shouldBeIn && !isIn) {
+          await API.call('/api/sites/' + siteId + '/category-groups/' + g.id + '/products', { method: 'POST', body: JSON.stringify({ productId: editingProductId }) });
+        } else if (!shouldBeIn && isIn) {
+          await API.call('/api/sites/' + siteId + '/category-groups/' + g.id + '/products/' + editingProductId, { method: 'DELETE' });
+        }
+      }
+    }
+    document.getElementById('editProductModal').style.display = 'none';
+    renderProductList();
+  } catch (err) { alert(err.message); }
+});
+
+async function renderCategoryOptions() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  document.getElementById('prodCategory').innerHTML = '<option value="">No category</option>' + site.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+}
+
+function sbAdminEscape(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// A search box that shows a live-filtered dropdown of matching products as
+// you type, instead of a long plain <select> -- used anywhere you're
+// picking one product to add out of a potentially large catalog.
+function renderSearchableProductPicker(containerId, products, onSelect) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.classList.add('searchable-picker');
+  container.innerHTML = `
+    <input type="text" class="searchable-picker-input" placeholder="${products.length ? 'Search products to add…' : 'No other products to add'}" ${products.length ? '' : 'disabled'}/>
+    <div class="searchable-picker-list" style="display:none;"></div>
+  `;
+  const input = container.querySelector('.searchable-picker-input');
+  const listEl = container.querySelector('.searchable-picker-list');
+  function renderMatches(query) {
+    const q = query.trim().toLowerCase();
+    const matches = q ? products.filter(p => p.name.toLowerCase().includes(q)) : products;
+    if (!matches.length) {
+      listEl.innerHTML = '<div class="searchable-picker-empty">No matches</div>';
+      listEl.style.display = 'block';
+      return;
+    }
+    listEl.innerHTML = matches.slice(0, 8).map(p => `<button type="button" class="searchable-picker-item" data-id="${p.id}"><span>${sbAdminEscape(p.name)}</span><span class="muted">₹${p.price}</span></button>`).join('');
+    listEl.style.display = 'block';
+  }
+  input.addEventListener('focus', () => renderMatches(input.value));
+  input.addEventListener('input', () => renderMatches(input.value));
+  input.addEventListener('blur', () => setTimeout(() => { listEl.style.display = 'none'; }, 150));
+  listEl.addEventListener('mousedown', (e) => {
+    const btn = e.target.closest('.searchable-picker-item');
+    if (!btn) return;
+    onSelect(Number(btn.dataset.id));
+  });
+}
+
+async function renderCategoryList() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const list = document.getElementById('categoryList');
+  if (site.categories.length === 0) { list.innerHTML = '<p class="muted">No categories yet.</p>'; return; }
+  list.innerHTML = site.categories.map(c => {
+    const productsInCat = site.products.filter(p => p.categoryId === c.id);
+    return `
+    <div class="product-row" style="flex-wrap:wrap;">
+      ${c.image ? `<img src="${c.image}"/>` : '<div class="noimg"></div>'}
+      <div style="flex:1;min-width:160px;"><strong>${c.name}</strong><br/><span class="muted">${productsInCat.length} product${productsInCat.length === 1 ? '' : 's'}</span></div>
+      <button class="icon-btn" onclick="openEditCategoryModal(${c.id})">Edit</button>
+      <button class="icon-btn" onclick="deleteCategory(${c.id})">Delete</button>
+      <div style="width:100%;margin-top:10px;">
+        <div id="catPicker-${c.id}"></div>
+      </div>
+    </div>
+  `;
+  }).join('');
+  site.categories.forEach(c => {
+    const otherProducts = site.products.filter(p => p.categoryId !== c.id);
+    renderSearchableProductPicker('catPicker-' + c.id, otherProducts, (productId) => addProductToCategory(c.id, productId));
+  });
+}
+
+async function addProductToCategory(categoryId, productId) {
+  try {
+    await API.call('/api/sites/' + siteId + '/products/' + productId, {
+      method: 'PUT',
+      body: JSON.stringify({ categoryId })
+    });
+    renderCategoryList();
+  } catch (err) { alert(err.message); }
+}
+
+let editingCategoryId = null;
+function openEditCategoryModal(categoryId) {
+  editingCategoryId = categoryId;
+  const cat = site.categories.find(c => c.id === categoryId);
+  document.getElementById('editCategoryModalTitle').textContent = 'Products in "' + (cat ? cat.name : '') + '"';
+  renderEditCategoryProductList();
+  document.getElementById('editCategoryModal').style.display = 'flex';
+}
+function closeEditCategoryModal() {
+  document.getElementById('editCategoryModal').style.display = 'none';
+}
+function renderEditCategoryProductList() {
+  const inCat = site.products.filter(p => p.categoryId === editingCategoryId);
+  const list = document.getElementById('editCategoryProductList');
+  if (!inCat.length) { list.innerHTML = '<p class="muted">No products in this category yet.</p>'; return; }
+  list.innerHTML = inCat.map(p => `
+    <div class="row-between" style="padding:8px 12px;background:#FFF9F5;border:1px solid #F3E3DC;border-radius:8px;margin-bottom:8px;">
+      <span>${sbAdminEscape(p.name)} <span class="muted">₹${p.price}</span></span>
+      <button class="icon-btn" onclick="removeProductFromCategory(${p.id})">Remove</button>
+    </div>
+  `).join('');
+}
+async function removeProductFromCategory(productId) {
+  try {
+    await API.call('/api/sites/' + siteId + '/products/' + productId, {
+      method: 'PUT',
+      body: JSON.stringify({ categoryId: null })
+    });
+    const { site: s } = await API.call('/api/sites/' + siteId);
+    site = s;
+    renderEditCategoryProductList();
+    renderCategoryList();
+  } catch (err) { alert(err.message); }
+}
+
+let newCategoryImg = '';
+document.getElementById('newCategoryImageFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const progressEl = document.getElementById('newCategoryUploadProgress');
+  progressEl.style.display = 'block';
+  progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="catProgFill"></div></div><div class="upload-progress-text" id="catProgText">Uploading… 0%</div>`;
+  try {
+    const data = await uploadInfoFile(file, (pct) => {
+      document.getElementById('catProgFill').style.width = pct + '%';
+      document.getElementById('catProgText').textContent = `Uploading… ${pct}%`;
+    });
+    newCategoryImg = data.url;
+    document.getElementById('newCategoryImgPreview').innerHTML = `<img src="${newCategoryImg}" class="file-preview"/>`;
+    progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 photo uploaded</div>`;
+    setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+  } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+});
+
+document.getElementById('addCategoryBtn').addEventListener('click', async () => {
+  const name = document.getElementById('newCategoryName').value;
+  if (!name) { alert('Please enter a category name.'); return; }
+  try {
+    await API.call('/api/sites/' + siteId + '/categories', { method: 'POST', body: JSON.stringify({ name, image: newCategoryImg }) });
+    document.getElementById('newCategoryName').value = '';
+    document.getElementById('newCategoryImageFile').value = '';
+    document.getElementById('newCategoryImgPreview').innerHTML = '';
+    newCategoryImg = '';
+    renderCategoryList();
+    renderCategoryOptions();
+  } catch (err) { alert(err.message); }
+});
+
+async function deleteCategory(id) {
+  if (!confirm('Delete this category?')) return;
+  await API.call('/api/sites/' + siteId + '/categories/' + id, { method: 'DELETE' });
+  renderCategoryList();
+  renderCategoryOptions();
+}
+
+// ---------- Homepage Slider (Pro plan only) ----------
+let newSlideImg = '';
+document.getElementById('newSlideImageFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const progressEl = document.getElementById('newSlideUploadProgress');
+  progressEl.style.display = 'block';
+  progressEl.innerHTML = `<div class="upload-progress-bar"><div class="upload-progress-fill" id="slideProgFill"></div></div><div class="upload-progress-text" id="slideProgText">Uploading… 0%</div>`;
+  try {
+    const data = await uploadInfoFile(file, (pct) => {
+      document.getElementById('slideProgFill').style.width = pct + '%';
+      document.getElementById('slideProgText').textContent = `Uploading… ${pct}%`;
+    });
+    newSlideImg = data.url;
+    document.getElementById('newSlideImgPreview').innerHTML = `<img src="${newSlideImg}" class="file-preview"/>`;
+    progressEl.innerHTML = `<div class="upload-progress-done">✅ 1 photo uploaded</div>`;
+    setTimeout(() => { progressEl.style.display = 'none'; progressEl.innerHTML = ''; }, 2500);
+  } catch (err) { progressEl.style.display = 'none'; alert(err.message); }
+});
+
+document.getElementById('addSlideBtn').addEventListener('click', async () => {
+  if (!newSlideImg) { alert('Please upload a slide image first.'); return; }
+  try {
+    await API.call('/api/sites/' + siteId + '/hero-slides', {
+      method: 'POST',
+      body: JSON.stringify({
+        image: newSlideImg,
+        heading: document.getElementById('newSlideHeading').value,
+        subtext: document.getElementById('newSlideSubtext').value,
+        link: document.getElementById('newSlideLink').value
+      })
+    });
+    newSlideImg = '';
+    document.getElementById('newSlideImgPreview').innerHTML = '';
+    document.getElementById('newSlideImageFile').value = '';
+    document.getElementById('newSlideHeading').value = '';
+    document.getElementById('newSlideSubtext').value = '';
+    document.getElementById('newSlideLink').value = '';
+    renderSlideList();
+  } catch (err) { alert(err.message); }
+});
+
+async function renderSlideList() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const list = document.getElementById('slideList');
+  if (!site.heroSlides || site.heroSlides.length === 0) { list.innerHTML = '<p class="muted">No slides yet — add one above.</p>'; return; }
+  list.innerHTML = site.heroSlides.map(sl => `
+    <div class="product-row">
+      ${sl.image ? `<img src="${sl.image}"/>` : '<div class="noimg"></div>'}
+      <div style="flex:1;"><strong>${sl.heading || '(no heading)'}</strong><br/><span class="muted">${sl.subtext || ''}</span></div>
+      <button class="icon-btn" onclick="deleteSlide(${sl.id})">Delete</button>
+    </div>
+  `).join('');
+}
+async function deleteSlide(id) {
+  if (!confirm('Delete this slide?')) return;
+  await API.call('/api/sites/' + siteId + '/hero-slides/' + id, { method: 'DELETE' });
+  renderSlideList();
+}
+
+// ---------- Category Sections (Pro plan only): title + curated products ----------
+document.getElementById('addGroupBtn').addEventListener('click', async () => {
+  const title = document.getElementById('newGroupTitle').value.trim();
+  if (!title) { alert('Please enter a section title.'); return; }
+  try {
+    await API.call('/api/sites/' + siteId + '/category-groups', { method: 'POST', body: JSON.stringify({ title, productIds: [] }) });
+    document.getElementById('newGroupTitle').value = '';
+    renderGroupList();
+  } catch (err) { alert(err.message); }
+});
+
+async function renderGroupList() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const list = document.getElementById('groupList');
+  if (!site.categoryGroups || site.categoryGroups.length === 0) { list.innerHTML = '<p class="muted">No sections yet — create one above.</p>'; return; }
+  list.innerHTML = site.categoryGroups.map(g => {
+    const inSection = site.products.filter(p => (g.productIds || []).includes(p.id));
+    return `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="row-between">
+        <strong>${g.title}</strong>
+        <button class="icon-btn" onclick="deleteGroup(${g.id})">Delete Section</button>
+      </div>
+      ${inSection.length ? inSection.map(p => `
+        <div class="row-between" style="margin-top:10px;padding:8px 12px;background:#FFF9F5;border:1px solid #F3E3DC;border-radius:8px;">
+          <span>${p.name} <span class="muted">₹${p.price}</span></span>
+          <button class="icon-btn" onclick="removeProductFromGroup(${g.id}, ${p.id})">Remove</button>
+        </div>`).join('') : '<p class="muted" style="margin-top:10px;">No products in this section yet.</p>'}
+      <div style="margin-top:12px;">
+        <div id="groupPicker-${g.id}"></div>
+      </div>
+    </div>
+  `;
+  }).join('');
+  site.categoryGroups.forEach(g => {
+    const notInSection = site.products.filter(p => !(g.productIds || []).includes(p.id));
+    renderSearchableProductPicker('groupPicker-' + g.id, notInSection, (productId) => addProductToGroup(g.id, productId));
+  });
+}
+
+async function addProductToGroup(groupId, productId) {
+  try {
+    await API.call('/api/sites/' + siteId + '/category-groups/' + groupId + '/products', { method: 'POST', body: JSON.stringify({ productId }) });
+    renderGroupList();
+    renderProdSectionsChecks();
+  } catch (err) { alert(err.message); }
+}
+
+async function removeProductFromGroup(groupId, productId) {
+  await API.call('/api/sites/' + siteId + '/category-groups/' + groupId + '/products/' + productId, { method: 'DELETE' });
+  renderGroupList();
+  renderProdSectionsChecks();
+}
+
+async function deleteGroup(id) {
+  if (!confirm('Delete this section?')) return;
+  await API.call('/api/sites/' + siteId + '/category-groups/' + id, { method: 'DELETE' });
+  renderGroupList();
+  renderProdSectionsChecks();
+}
+
+// ---------- Sliding Products (Pro plan only): named carousel rows ----------
+document.getElementById('addSlidingBtn').addEventListener('click', async () => {
+  const title = document.getElementById('newSlidingTitle').value.trim();
+  if (!title) { alert('Please enter a title for this sliding row.'); return; }
+  try {
+    await API.call('/api/sites/' + siteId + '/sliding-sections', { method: 'POST', body: JSON.stringify({ title, productIds: [] }) });
+    document.getElementById('newSlidingTitle').value = '';
+    renderSlidingList();
+  } catch (err) { alert(err.message); }
+});
+
+async function renderSlidingList() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const list = document.getElementById('slidingList');
+  if (!site.slidingSections || site.slidingSections.length === 0) { list.innerHTML = '<p class="muted">No sliding rows yet — create one above.</p>'; return; }
+  list.innerHTML = site.slidingSections.map(g => {
+    const inRow = site.products.filter(p => (g.productIds || []).includes(p.id));
+    return `
+    <div class="card" style="margin-bottom:14px;">
+      <div class="row-between">
+        <strong>${g.title}</strong>
+        <button class="icon-btn" onclick="deleteSlidingSection(${g.id})">Delete Row</button>
+      </div>
+      ${inRow.length ? inRow.map(p => `
+        <div class="row-between" style="margin-top:10px;padding:8px 12px;background:#FFF9F5;border:1px solid #F3E3DC;border-radius:8px;">
+          <span>${p.name} <span class="muted">₹${p.price}</span></span>
+          <button class="icon-btn" onclick="removeProductFromSliding(${g.id}, ${p.id})">Remove</button>
+        </div>`).join('') : '<p class="muted" style="margin-top:10px;">No products in this row yet.</p>'}
+      <div style="margin-top:12px;">
+        <div id="slidingPicker-${g.id}"></div>
+      </div>
+    </div>
+  `;
+  }).join('');
+  site.slidingSections.forEach(g => {
+    const notInRow = site.products.filter(p => !(g.productIds || []).includes(p.id));
+    renderSearchableProductPicker('slidingPicker-' + g.id, notInRow, (productId) => addProductToSliding(g.id, productId));
+  });
+}
+
+async function addProductToSliding(sectionId, productId) {
+  try {
+    await API.call('/api/sites/' + siteId + '/sliding-sections/' + sectionId + '/products', { method: 'POST', body: JSON.stringify({ productId }) });
+    renderSlidingList();
+  } catch (err) { alert(err.message); }
+}
+
+async function removeProductFromSliding(sectionId, productId) {
+  await API.call('/api/sites/' + siteId + '/sliding-sections/' + sectionId + '/products/' + productId, { method: 'DELETE' });
+  renderSlidingList();
+}
+
+async function deleteSlidingSection(id) {
+  if (!confirm('Delete this sliding row?')) return;
+  await API.call('/api/sites/' + siteId + '/sliding-sections/' + id, { method: 'DELETE' });
+  renderSlidingList();
+}
+
+// ---------- "Include in these sections" checkboxes on the Add Product form ----------
+async function renderProdSectionsChecks() {
+  if (!isPro) { document.getElementById('prodSectionsWrap').style.display = 'none'; return; }
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  if (!site.categoryGroups || site.categoryGroups.length === 0) { document.getElementById('prodSectionsWrap').style.display = 'none'; return; }
+  document.getElementById('prodSectionsWrap').style.display = 'block';
+  document.getElementById('prodSectionsChecks').innerHTML = site.categoryGroups.map(g => `
+    <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin:0;border:1px solid #F3E3DC;border-radius:100px;padding:6px 14px;">
+      <input type="checkbox" value="${g.id}" class="prodSectionCheck" style="width:auto;"/> ${g.title}
+    </label>
+  `).join('');
+}
+
+// ---------- Social Links ----------
+document.getElementById('socialSaveBtn').addEventListener('click', async () => {
+  const status = document.getElementById('socialStatus');
+  status.textContent = 'Saving...';
+  try {
+    await API.call('/api/sites/' + siteId + '/social-links', {
+      method: 'PUT',
+      body: JSON.stringify({
+        instagram: document.getElementById('socialInstagram').value,
+        facebook: document.getElementById('socialFacebook').value,
+        twitter: document.getElementById('socialTwitter').value,
+        youtube: document.getElementById('socialYoutube').value,
+        tiktok: document.getElementById('socialTiktok').value,
+        website: document.getElementById('socialWebsite').value
+      })
+    });
+    status.textContent = 'Saved ✓';
+    setTimeout(() => status.textContent = '', 2000);
+  } catch (err) { status.textContent = ''; alert(err.message); }
+});
+
+document.getElementById('savePaymentBtn').addEventListener('click', async () => {
+  const status = document.getElementById('paymentStatus');
+  status.textContent = 'Saving...';
+  try {
+    await API.call('/api/sites/' + siteId, { method: 'PUT', body: JSON.stringify({ payment_link: document.getElementById('paymentLink').value, whatsapp_number: document.getElementById('whatsappNumber').value }) });
+    status.textContent = 'Saved ✓';
+    setTimeout(() => status.textContent = '', 2000);
+  } catch (err) { status.textContent = ''; alert(err.message); }
+});
+
+async function loadOrders() {
+  const { orders } = await API.call('/api/sites/' + siteId + '/orders');
+  const list = document.getElementById('orderList');
+  if (orders.length === 0) { list.innerHTML = '<p class="muted">No orders yet.</p>'; return; }
+  list.innerHTML = orders.map(o => {
+    const statusBadge = o.status === 'awaiting_payment'
+      ? '<span style="background:#fef3e2;color:#b45309;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;">⏳ Awaiting payment confirmation</span>'
+      : o.status === 'paid'
+        ? '<span style="background:#f0fdf4;color:#1a8a5f;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;">✓ Paid</span>'
+        : o.paymentMethod === 'COD'
+          ? '<span style="background:#f5f5f4;color:#78716c;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;">Cash on delivery</span>'
+          : '';
+    const markPaidBtn = o.status === 'awaiting_payment'
+      ? `<button class="icon-btn" style="margin-top:8px;" onclick="markOrderPaid(${o.id})">Mark as Paid</button>`
+      : '';
+    // COD orders start as 'new' and only actually collect money on
+    // delivery -- give sellers an explicit way to record that, so Cancel
+    // (no money collected) vs Refund (money collected) stays accurate.
+    const markDeliveredBtn = (o.status === 'new' && o.paymentMethod === 'COD')
+      ? `<button class="icon-btn" style="margin-top:8px;" onclick="markOrderFulfilled(${o.id})">Mark Delivered (Cash Collected)</button>`
+      : '';
+    // Cancel = no money was ever collected (COD not yet delivered, or an
+    // online order still awaiting payment). Refund = money WAS collected
+    // (paid or fulfilled) and needs to go back to the customer. Keeping
+    // these separate keeps Finance / Payouts accurate -- a cancellation
+    // never counts as a sale, a refund does.
+    const cancelBtn = (o.status === 'new' || o.status === 'awaiting_payment')
+      ? `<button class="icon-btn" style="margin-top:8px;" onclick="cancelOrder(${o.id})">Cancel Order</button>`
+      : '';
+    const refundBtn = (o.status === 'paid' || o.status === 'fulfilled')
+      ? `<button class="icon-btn" style="margin-top:8px;" onclick="refundOrder(${o.id}, ${o.total})">Refund…</button>`
+      : '';
+    const cancelledBadge = o.status === 'cancelled'
+      ? '<span style="background:#fef2f2;color:#b42318;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;">Cancelled — no commission charged</span>'
+      : o.status === 'refunded'
+        ? `<span style="background:#fef2f2;color:#b42318;font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;">Refunded${o.refunded_amount ? ' ₹' + o.refunded_amount : ''}</span>`
+        : '';
+    return `
+    <div class="order-card">
+      <div class="row-between"><strong>${o.customerName}</strong><span class="muted">${new Date(o.created_at).toLocaleString('en-IN')}</span></div>
+      <p class="muted" style="margin:4px 0;">${o.email || ''} ${o.phone ? '· ' + o.phone : ''}</p>
+      <p class="muted" style="margin:4px 0;">📍 ${o.address}</p>
+      <p style="margin:4px 0;">Payment: <strong>${o.paymentMethod}</strong> ${statusBadge} ${cancelledBadge}</p>
+      <div style="margin-top:8px;">
+        ${o.items.map(i => `<div class="row-between"><span>${i.name} × ${i.qty}</span><span>₹${i.price * i.qty}</span></div>`).join('')}
+      </div>
+      ${o.couponCode ? `<div class="row-between muted" style="margin-top:4px;"><span>Coupon "${o.couponCode}"</span><span>−₹${o.discount}</span></div>` : ''}
+      <div class="row-between" style="margin-top:8px;font-weight:700;"><span>Total</span><span>₹${o.total}</span></div>
+      ${markPaidBtn} ${markDeliveredBtn} ${cancelBtn} ${refundBtn}
+    </div>
+  `;
+  }).join('');
+}
+
+async function markOrderPaid(orderId) {
+  try {
+    await API.call('/api/sites/' + siteId + '/orders/' + orderId, { method: 'PUT', body: JSON.stringify({ status: 'paid' }) });
+    loadOrders();
+  } catch (err) { alert(err.message); }
+}
+
+async function markOrderFulfilled(orderId) {
+  try {
+    await API.call('/api/sites/' + siteId + '/orders/' + orderId, { method: 'PUT', body: JSON.stringify({ status: 'fulfilled' }) });
+    loadOrders();
+  } catch (err) { alert(err.message); }
+}
+
+async function cancelOrder(orderId) {
+  if (!confirm('Cancel this order? This reverses the BuddySite commission for it.')) return;
+  try {
+    await API.call('/api/sites/' + siteId + '/orders/' + orderId, { method: 'PUT', body: JSON.stringify({ status: 'cancelled' }) });
+    loadOrders();
+  } catch (err) { alert(err.message); }
+}
+
+async function refundOrder(orderId, orderTotal) {
+  const input = prompt(`Refund amount (order total is ₹${orderTotal}). Enter the full total for a full refund, or less for a partial refund.`, orderTotal);
+  if (!input) return;
+  const amount = Number(input);
+  if (!amount || amount <= 0) { alert('Enter a valid amount.'); return; }
+  try {
+    await API.call('/api/sites/' + siteId + '/orders/' + orderId + '/refund', { method: 'POST', body: JSON.stringify({ amount }) });
+    loadOrders();
+  } catch (err) { alert(err.message); }
+}
+
+// ---------- Finance / Payouts ----------
+async function loadFinance() {
+  const summary = await API.call('/api/sites/' + siteId + '/finance');
+  const grid = document.getElementById('financeSummaryGrid');
+  grid.innerHTML = `
+    <div class="analytics-card"><div class="analytics-label">Gross Sales</div><div class="analytics-value">₹${summary.grossSales.toFixed(2)}</div></div>
+    <div class="analytics-card"><div class="analytics-label">Discounts</div><div class="analytics-value">₹${summary.discounts.toFixed(2)}</div></div>
+    <div class="analytics-card"><div class="analytics-label">Commissionable Sales</div><div class="analytics-value">₹${summary.commissionableSales.toFixed(2)}</div></div>
+    <div class="analytics-card"><div class="analytics-label">BuddySite Commission</div><div class="analytics-value">₹${summary.commission.toFixed(2)}</div></div>
+    <div class="analytics-card"><div class="analytics-label">Refunds</div><div class="analytics-value">₹${summary.refunds.toFixed(2)}</div></div>
+    <div class="analytics-card"><div class="analytics-label">Net Payout</div><div class="analytics-value">₹${summary.netPayout.toFixed(2)}</div></div>
+  `;
+
+  const ledgerEl = document.getElementById('financeLedger');
+  if (!summary.ledger.length) { ledgerEl.innerHTML = '<p class="muted">No orders yet.</p>'; return; }
+  ledgerEl.innerHTML = summary.ledger.map(r => {
+    const statusLabel = { pending: 'Pending', settled: 'Settled', reversed: 'Reversed', partially_reversed: 'Partially refunded' }[r.status] || r.status;
+    const cancelledNote = r.excludedAsCancelled
+      ? `<div style="margin-top:8px;background:#fef2f2;color:#b42318;font-size:11px;font-weight:600;padding:6px 10px;border-radius:8px;">Cancelled before payment — excluded from all totals above, no commission owed.</div>`
+      : '';
+    return `
+    <div class="order-card">
+      <div class="row-between"><strong>Order #${r.order_id}</strong><span class="muted">${new Date(r.created_at).toLocaleDateString('en-IN')}</span></div>
+      <div class="row-between muted" style="margin-top:4px;"><span>Plan at transaction</span><span>${r.plan_at_transaction} (${(r.commission_rate_at_transaction * 100).toFixed(1)}%)</span></div>
+      <div class="row-between" style="margin-top:4px;"><span>Commissionable amount</span><span>₹${r.commission_base_amount.toFixed(2)}</span></div>
+      <div class="row-between" style="margin-top:4px;"><span>BuddySite commission (original)</span><span>₹${r.commission_amount.toFixed(2)}</span></div>
+      ${r.orderRefundedAmount ? `<div class="row-between muted" style="margin-top:4px;"><span>Refunded to customer</span><span>₹${r.orderRefundedAmount.toFixed(2)}</span></div>` : ''}
+      <div class="row-between" style="margin-top:4px;font-weight:700;"><span>Net commission owed</span><span>₹${r.netCommission.toFixed(2)}</span></div>
+      <div class="row-between muted" style="margin-top:4px;"><span>Payment-provider fee</span><span>${r.payment_provider_fee != null ? '₹' + r.payment_provider_fee.toFixed(2) : 'Not tracked yet — you collect payment directly'}</span></div>
+      <div class="row-between muted" style="margin-top:4px;"><span>Payout status / date</span><span>${statusLabel}${r.settled_at ? ' · ' + new Date(r.settled_at).toLocaleDateString('en-IN') : ''}</span></div>
+      ${cancelledNote}
+    </div>
+  `;
+  }).join('');
+}
+
+// ---------- Coupons (Starter plan and above) ----------
+document.getElementById('addCouponBtn').addEventListener('click', async () => {
+  const code = document.getElementById('newCouponCode').value.trim();
+  const type = document.getElementById('newCouponType').value;
+  const value = document.getElementById('newCouponValue').value;
+  if (!code) { alert('Please enter a coupon code.'); return; }
+  if (type !== 'free_shipping' && (!value || Number(value) <= 0)) { alert('Please enter a discount value.'); return; }
+  try {
+    await API.call('/api/sites/' + siteId + '/coupons', {
+      method: 'POST',
+      body: JSON.stringify({
+        code, type,
+        value: type === 'free_shipping' ? 0 : value,
+        minCartValue: document.getElementById('newCouponMinCart').value || 0,
+        expiryDate: document.getElementById('newCouponExpiry').value || '',
+        usageLimit: document.getElementById('newCouponUsageLimit').value || 0
+      })
+    });
+    document.getElementById('newCouponCode').value = '';
+    document.getElementById('newCouponValue').value = '';
+    document.getElementById('newCouponMinCart').value = '';
+    document.getElementById('newCouponExpiry').value = '';
+    document.getElementById('newCouponUsageLimit').value = '';
+    renderCouponList();
+  } catch (err) { alert(err.message); }
+});
+
+async function renderCouponList() {
+  const { site: s } = await API.call('/api/sites/' + siteId);
+  site = s;
+  const list = document.getElementById('couponList');
+  if (!site.coupons || site.coupons.length === 0) { list.innerHTML = '<p class="muted">No coupons yet — create one above.</p>'; return; }
+  const typeLabel = { percent: '% off', fixed: '₹ off', free_shipping: 'Free shipping' };
+  list.innerHTML = site.coupons.map(c => {
+    const valueText = c.type === 'percent' ? `${c.value}% off` : c.type === 'fixed' ? `₹${c.value} off` : 'Free shipping';
+    const usageText = c.usageLimit > 0 ? `${c.usageCount}/${c.usageLimit} used` : `${c.usageCount} used`;
+    const extra = [
+      c.minCartValue > 0 ? `Min cart ₹${c.minCartValue}` : '',
+      c.expiryDate ? `Expires ${c.expiryDate}` : '',
+      usageText
+    ].filter(Boolean).join(' · ');
+    return `
+    <div class="product-row">
+      <div style="flex:1;"><strong>${sbAdminEscape(c.code)}</strong> <span class="muted">— ${valueText}</span><br/><span class="muted" style="font-size:.8rem;">${extra}</span></div>
+      <button class="icon-btn" onclick="deleteCoupon(${c.id})">Delete</button>
+    </div>
+  `;
+  }).join('');
+}
+
+async function deleteCoupon(couponId) {
+  if (!confirm('Delete this coupon?')) return;
+  await API.call('/api/sites/' + siteId + '/coupons/' + couponId, { method: 'DELETE' });
+  renderCouponList();
+}
+
+// ---------- Analytics ----------
+async function loadAnalytics() {
+  const { orders } = await API.call('/api/sites/' + siteId + '/orders');
+  const today = new Date().toDateString();
+  const todaySales = orders.filter(o => new Date(o.created_at).toDateString() === today).reduce((sum, o) => sum + o.total, 0);
+  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
+  const aov = orders.length ? Math.round(totalRevenue / orders.length) : 0;
+
+  document.getElementById('anaTodaySales').textContent = '₹' + todaySales;
+  document.getElementById('anaTotalOrders').textContent = orders.length;
+  document.getElementById('anaAOV').textContent = '₹' + aov;
+  document.getElementById('anaTotalRevenue').textContent = '₹' + totalRevenue;
+
+  // Top products by revenue across all orders
+  const productTotals = {};
+  orders.forEach(o => {
+    (o.items || []).forEach(i => {
+      const key = i.name;
+      productTotals[key] = (productTotals[key] || 0) + i.price * i.qty;
+    });
+  });
+  const topProducts = Object.entries(productTotals).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const topProductsEl = document.getElementById('anaTopProducts');
+  topProductsEl.innerHTML = topProducts.length
+    ? topProducts.map(([name, revenue]) => `<div class="top-product-row"><span>${sbAdminEscape(name)}</span><span><strong>₹${revenue}</strong></span></div>`).join('')
+    : '<p class="muted">No sales yet.</p>';
+
+  // Revenue for each of the last 7 days
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d);
+  }
+  const dayTotals = days.map(d => {
+    const dayStr = d.toDateString();
+    return orders.filter(o => new Date(o.created_at).toDateString() === dayStr).reduce((sum, o) => sum + o.total, 0);
+  });
+  const maxDay = Math.max(1, ...dayTotals);
+  const chartEl = document.getElementById('anaRevenueChart');
+  chartEl.innerHTML = days.map((d, i) => `
+    <div class="revenue-bar-wrap">
+      <div class="revenue-bar" style="height:${Math.max(2, Math.round((dayTotals[i] / maxDay) * 130))}px;" title="₹${dayTotals[i]}"></div>
+      <div class="revenue-bar-label">${d.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
+    </div>
+  `).join('');
+}
+
+load();
+</script>
+</body>
+</html>
