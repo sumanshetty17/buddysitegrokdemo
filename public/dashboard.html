@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard — BuddySite</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css"/>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+<div class="demo-banner">⚠️ DEMO BUILD — plan activation skips real payment. Never deploy this version publicly.</div>
+<div class="container">
+  <div class="topbar">
+    <a href="/" class="logo">Buddy<span>Site</span></a>
+    <div class="row">
+      <span class="plan-pill" id="planPill">...</span>
+      <button class="btn secondary" onclick="API.logout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="card" id="noPlanNotice" style="display:none;margin-bottom:32px;text-align:center;">
+    <h3>Choose a plan to start your store</h3>
+    <p class="muted">You need an active plan before you can create a store. Pick one below to get started.</p>
+  </div>
+
+  <div class="row-between" style="margin-bottom:24px;">
+    <h2 style="margin:0;">Your stores</h2>
+    <button class="btn" id="newSiteBtn">+ New store</button>
+  </div>
+  <div class="site-list" id="siteList"></div>
+
+  <div id="successBanner" style="display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#1a8a5f;padding:16px 20px;border-radius:14px;margin-bottom:24px;font-weight:600;"></div>
+
+  <div class="modal-overlay" id="createStoreModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:20px;padding:32px;max-width:560px;width:90%;max-height:90vh;overflow-y:auto;">
+      <h2 style="margin-top:0;">Create your store</h2>
+      <label>Store name</label>
+      <input id="newStoreName" placeholder="e.g. Suman's Fashion"/>
+      <label style="margin-top:20px;">Choose a website style</label>
+      <div id="themeCards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:8px;"></div>
+      <div class="row" style="margin-top:24px;justify-content:flex-end;">
+        <button class="btn secondary" id="cancelCreateStoreBtn">Cancel</button>
+        <button class="btn" id="confirmCreateStoreBtn">Create Store</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="billingSection">
+    <h2>Plans</h2>
+    <p class="muted" id="renewNote"></p>
+    <div class="card" id="autopayCard" style="display:none;margin-bottom:24px;">
+      <div class="row-between">
+        <div>
+          <strong id="autopayTitle">Auto-pay</strong>
+          <p class="muted" id="autopaySubtext" style="margin:4px 0 0;font-size:.9rem;"></p>
+        </div>
+        <button class="btn" id="autopayBtn"></button>
+      </div>
+    </div>
+    <div class="grid3" id="plansGrid"></div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+API.requireLogin();
+let currentUser = null;
+
+async function loadMe() {
+  const { user } = await API.call('/api/auth/me');
+  currentUser = user;
+  const hasPlan = !!user.plan;
+  document.getElementById('planPill').textContent = hasPlan ? user.plan.toUpperCase() + ' PLAN' : 'NO ACTIVE PLAN';
+  document.getElementById('noPlanNotice').style.display = hasPlan ? 'none' : 'block';
+  document.getElementById('newSiteBtn').disabled = !hasPlan;
+  if (user.plan_renews_at) {
+    document.getElementById('renewNote').textContent = 'Renews on ' + new Date(user.plan_renews_at).toLocaleDateString('en-IN');
+  }
+}
+
+async function loadSites() {
+  const { sites } = await API.call('/api/sites');
+  const list = document.getElementById('siteList');
+  if (sites.length === 0) {
+    list.innerHTML = '<p class="muted">No stores yet — create your first one.</p>';
+    return;
+  }
+  list.innerHTML = sites.map(s => `
+    <div class="site-card">
+      <div class="row-between">
+        <strong>${s.store_name}</strong>
+        <span class="status ${s.published ? 'live' : 'draft'}">${s.published ? 'Live' : 'Draft'}</span>
+      </div>
+      <p class="muted" style="font-size:.85rem;margin:8px 0 16px;">/store/${s.slug}</p>
+      <div class="row">
+        <a class="btn secondary" href="/store-admin.html?id=${s.id}">Manage</a>
+        ${s.published ? `<a class="btn secondary" href="/store/${s.slug}" target="_blank">View my store</a>` : ''}
+        <button class="icon-btn" onclick="deleteSite(${s.id})" title="Delete">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function deleteSite(id) {
+  if (!confirm('Delete this store? This cannot be undone.')) return;
+  await API.call('/api/sites/' + id, { method: 'DELETE' });
+  loadSites();
+}
+
+const THEME_INFO = {
+  simple: { name: 'Simple', desc: 'Warm, friendly colors.', requiredPlan: 'free' },
+  bold: { name: 'Bold', desc: 'Black & white, high contrast.', requiredPlan: 'starter' },
+  aesthetic: { name: 'Aesthetic', desc: 'Elegant, fully professional.', requiredPlan: 'grow' }
+};
+const PLAN_ORDER = ['free', 'starter', 'grow', 'pro'];
+let selectedTheme = 'simple';
+
+function planUnlocksTheme(userPlanKey, requiredPlanKey) {
+  return PLAN_ORDER.indexOf(userPlanKey) >= PLAN_ORDER.indexOf(requiredPlanKey);
+}
+
+function renderThemeCards() {
+  const wrap = document.getElementById('themeCards');
+  const planLabel = { free: 'Free', starter: 'Starter', grow: 'Grow', pro: 'Pro' };
+  wrap.innerHTML = Object.keys(THEME_INFO).map(key => {
+    const info = THEME_INFO[key];
+    const unlocked = currentUser.plan && planUnlocksTheme(currentUser.plan, info.requiredPlan);
+    const isSelected = selectedTheme === key;
+    return `
+      <div onclick="${unlocked ? `selectTheme('${key}')` : ''}" style="border:2px solid ${isSelected ? '#FF6A88' : '#F3E3DC'};border-radius:12px;padding:14px;text-align:center;cursor:${unlocked ? 'pointer' : 'not-allowed'};opacity:${unlocked ? '1' : '.45'};">
+        <strong style="font-size:.9rem;">${info.name}</strong>
+        <p class="muted" style="font-size:.75rem;margin:6px 0 0;">${info.desc}</p>
+        ${!unlocked ? `<p style="font-size:.7rem;color:#FF6A88;margin:6px 0 0;">🔒 Requires ${planLabel[info.requiredPlan]} plan</p>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function selectTheme(key) {
+  selectedTheme = key;
+  renderThemeCards();
+}
+
+document.getElementById('newSiteBtn').addEventListener('click', () => {
+  document.getElementById('newStoreName').value = '';
+  selectedTheme = 'simple';
+  renderThemeCards();
+  document.getElementById('createStoreModal').style.display = 'flex';
+});
+document.getElementById('cancelCreateStoreBtn').addEventListener('click', () => {
+  document.getElementById('createStoreModal').style.display = 'none';
+});
+document.getElementById('confirmCreateStoreBtn').addEventListener('click', async () => {
+  const name = document.getElementById('newStoreName').value.trim();
+  if (!name) { alert('Please enter a store name.'); return; }
+  try {
+    const { site } = await API.call('/api/sites', { method: 'POST', body: JSON.stringify({ store_name: name, theme: selectedTheme }) });
+    location.href = '/store-admin.html?id=' + site.id;
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+async function loadPlans() {
+  const { plans } = await API.call('/api/billing/plans');
+  const grid = document.getElementById('plansGrid');
+  grid.innerHTML = plans.map(p => {
+    const isCurrent = currentUser.plan === p.key;
+    const priceLabel = p.amount_paise === 0 ? 'Free' : `₹${(p.amount_paise / 100).toLocaleString('en-IN')}`;
+    return `
+    <div class="plan-card ${isCurrent ? 'featured' : ''}">
+      ${isCurrent ? '<div class="tag">Current plan</div>' : ''}
+      <h3>${p.name}</h3>
+      <div class="plan-price">${priceLabel}${p.amount_paise > 0 ? '<small>/mo</small>' : ''}</div>
+      <p class="muted">${p.blurb}</p>
+      <p class="muted" style="font-size:.8rem;">BuddySite commission: ${p.platformFeePercent}% per sale</p>
+      ${isCurrent ? '<button class="btn secondary" disabled style="width:100%;margin-top:12px;">Active</button>' :
+        `<button class="btn" style="width:100%;margin-top:12px;" onclick="subscribe('${p.key}')">Choose ${p.name} (DEMO)</button>`
+      }
+    </div>`;
+  }).join('');
+}
+
+// Combined flow: pay the discounted first month, then immediately set up
+// auto-pay (at the regular price) so month 2 onward is automatic.
+async function subscribe(planKey) {
+  // DEMO BUILD: skips real payment AND auto-pay setup entirely.
+  try {
+    await API.call('/api/billing/demo-activate', { method: 'POST', body: JSON.stringify({ plan: planKey }) });
+    sessionStorage.setItem('sb_payment_success', planKey);
+    location.reload();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function loadAutopayStatus() {
+  if (!currentUser.plan) return;
+  const card = document.getElementById('autopayCard');
+  card.style.display = 'block';
+  document.getElementById('autopayTitle').textContent = '[DEMO] Auto-pay preview not available';
+  document.getElementById('autopaySubtext').textContent = 'On your real live site, this is where sellers set up auto-pay for month 2 onward.';
+  document.getElementById('autopayBtn').style.display = 'none';
+}
+
+async function enableAutopay(isPartOfSignup) {
+  try {
+    const { subscriptionId, keyId } = await API.call('/api/billing/enable-autopay', { method: 'POST' });
+    const rzp = new Razorpay({
+      key: keyId, subscription_id: subscriptionId,
+      name: 'BuddySite', description: 'Auto-pay authorization',
+      handler: async function (response) {
+        try {
+          await API.call('/api/billing/verify-autopay', { method: 'POST', body: JSON.stringify(response) });
+          alert("Auto-pay is set up! You'll be charged automatically each month from now on.");
+        } catch (err) {
+          alert('Setup succeeded but verification failed: ' + err.message);
+        }
+        location.reload();
+      },
+      modal: {
+        ondismiss: function () {
+          if (isPartOfSignup) {
+            alert("Your first month is active, but auto-pay wasn't set up. You can finish this anytime from your dashboard — otherwise you'll need to renew manually next month.");
+          }
+          location.reload();
+        }
+      },
+      theme: { color: '#FF6A88' }
+    });
+    rzp.open();
+  } catch (err) {
+    alert(err.message);
+    if (isPartOfSignup) location.reload();
+  }
+}
+
+function showSuccessBannerIfNeeded() {
+  const justPaidPlan = sessionStorage.getItem('sb_payment_success');
+  if (!justPaidPlan) return;
+  sessionStorage.removeItem('sb_payment_success');
+  const planNames = { free: 'Free', starter: 'Starter', grow: 'Grow', pro: 'Pro' };
+  const banner = document.getElementById('successBanner');
+  banner.style.display = 'block';
+  banner.textContent = `✅ Payment successful — your ${planNames[justPaidPlan] || justPaidPlan} plan is now active!`;
+}
+
+(async function init() {
+  showSuccessBannerIfNeeded();
+  await loadMe();
+  await loadSites();
+  await loadPlans();
+  await loadAutopayStatus();
+})();
+</script>
+</body>
+</html>
