@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Log in — BuddySite</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="container">
+  <nav class="nav"><a href="/" class="logo">Buddy<span>Site</span></a></nav>
+  <form class="auth" id="loginForm">
+    <h2>Welcome back</h2>
+    <label>Email</label>
+    <input type="email" id="email" required placeholder="you@example.com"/>
+    <label>Password</label>
+    <input type="password" id="password" required placeholder="Your password"/>
+    <button class="btn" style="width:100%;margin-top:24px;" type="submit">Log in</button>
+    <div class="error-msg" id="err"></div>
+    <p class="muted" style="margin-top:20px;text-align:center;">New here? <a href="/signup.html">Create an account</a></p>
+  </form>
+</div>
+<script>
+const API = {
+  token() { return localStorage.getItem('token'); },
+  setAuth(token, user) {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+  },
+  async call(path, opts = {}) {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, opts.headers || {});
+    if (this.token()) headers['Authorization'] = 'Bearer ' + this.token();
+    const res = await fetch(path, Object.assign({}, opts, { headers }));
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    return data;
+  }
+};
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errBox = document.getElementById('err');
+  errBox.style.display = 'none';
+  try {
+    const data = await API.call('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({
+        email: document.getElementById('email').value,
+        password: document.getElementById('password').value
+      })
+    });
+    API.setAuth(data.token, data.user);
+    location.href = '/dashboard.html';
+  } catch (err) {
+    errBox.textContent = err.message;
+    errBox.style.display = 'block';
+  }
+});
+</script>
+</body>
+</html>

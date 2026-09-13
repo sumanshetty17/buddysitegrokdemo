@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BuddySite AI Bot — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  body{
+    margin:0;min-height:100vh;font-family:Inter,system-ui,sans-serif;
+    background:linear-gradient(160deg,#f8fafc 0%,#eef2ff 50%,#faf5ff 100%);
+    color:#0f172a;
+  }
+  .hero{
+    text-align:center;padding:40px 20px 20px;
+  }
+  .hero h1{font-family:Poppins,sans-serif;margin:0 0 8px;font-size:1.75rem}
+  .hero p{color:#64748b;margin:0 auto;max-width:520px;line-height:1.5}
+  .stage{
+    position:relative;margin:24px auto;width:min(900px,94vw);height:420px;
+    background:#fff;border:1px solid #e2e8f0;border-radius:24px;
+    box-shadow:0 20px 40px rgba(15,23,42,.08);overflow:hidden;
+  }
+  .stage-label{
+    position:absolute;top:14px;left:18px;font-size:.75rem;font-weight:700;
+    color:#64748b;text-transform:uppercase;letter-spacing:.05em;z-index:2;
+  }
+  .fake-ui{
+    position:absolute;inset:48px 20px 20px;display:grid;grid-template-columns:160px 1fr;gap:16px;
+    opacity:.55;pointer-events:none;
+  }
+  .fake-side{background:#f1f5f9;border-radius:12px;padding:12px}
+  .fake-side div{height:28px;background:#e2e8f0;border-radius:8px;margin-bottom:8px}
+  .fake-main{display:flex;flex-direction:column;gap:10px}
+  .fake-main .bar{height:40px;background:#e2e8f0;border-radius:10px}
+  .fake-main .card{flex:1;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:12px}
+
+  /* Bot */
+  .bbot-wrap{
+    position:absolute;z-index:10;width:72px;height:72px;
+    transition:left .9s ease, top .9s ease;
+  }
+  .bbot-face{
+    width:72px;height:72px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #c7d2fe 0%, #818cf8 45%, #6366f1 100%);
+    box-shadow:0 8px 24px rgba(99,102,241,.4), inset 0 -6px 12px rgba(0,0,0,.12);
+    position:relative;cursor:pointer;
+    transition:transform .25s ease;
+  }
+  .bbot-face:hover{transform:scale(1.08)}
+  .bbot-face.happy{animation:bbotBounce .5s ease}
+  .bbot-face.think{animation:bbotThink 1.2s ease infinite}
+  .bbot-face.wave{animation:bbotWave .6s ease}
+  @keyframes bbotBounce{0%,100%{transform:scale(1)}40%{transform:scale(1.15) translateY(-4px)}70%{transform:scale(.95)}}
+  @keyframes bbotThink{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+  @keyframes bbotWave{0%,100%{transform:rotate(0)}25%{transform:rotate(12deg)}75%{transform:rotate(-8deg)}}
+  .bbot-eye{
+    position:absolute;width:14px;height:14px;background:#0f172a;border-radius:50%;
+    top:24px;overflow:hidden;box-shadow:inset 0 0 0 2px #e0e7ff;
+  }
+  .bbot-eye.left{left:16px}
+  .bbot-eye.right{right:16px;left:auto}
+  .bbot-pupil{
+    position:absolute;width:6px;height:6px;background:#fff;border-radius:50%;
+    top:3px;left:3px;transition:transform .05s linear;
+  }
+  .bbot-specs{
+    display:none;position:absolute;top:20px;left:10px;right:10px;height:20px;
+    border:2.5px solid #1e293b;border-radius:8px;background:rgba(255,255,255,.15);
+  }
+  .bbot-specs:before{
+    content:'';position:absolute;left:50%;top:50%;width:8px;height:2px;background:#1e293b;
+    transform:translate(-50%,-50%);
+  }
+  .bbot-face.specs .bbot-specs{display:block}
+  .bbot-face.specs .bbot-eye{top:22px}
+  .bbot-mouth{
+    position:absolute;left:50%;bottom:16px;width:18px;height:8px;
+    margin-left:-9px;border:2.5px solid #1e293b;border-top:none;
+    border-radius:0 0 12px 12px;transition:height .2s,width .2s,border-radius .2s,background .2s;
+  }
+  .bbot-face.happy .bbot-mouth,.bbot-face.smile .bbot-mouth{
+    width:22px;height:11px;margin-left:-11px;border-radius:0 0 14px 14px;background:rgba(15,23,42,.15);
+  }
+  .bbot-face.open .bbot-mouth{
+    width:16px;height:14px;margin-left:-8px;border-radius:50%;background:#1e293b;border-color:#1e293b;
+  }
+  .bbot-face.think .bbot-mouth{
+    width:10px;height:4px;margin-left:-5px;border-radius:4px;border:none;background:#1e293b;
+  }
+  .bbot-tip{
+    position:absolute;right:82px;top:50%;transform:translateY(-50%);
+    background:#0f172a;color:#fff;font-size:12px;font-weight:600;
+    padding:8px 12px;border-radius:12px;white-space:nowrap;
+    opacity:0;pointer-events:none;transition:opacity .2s;
+    box-shadow:0 4px 16px rgba(0,0,0,.2);
+  }
+  .bbot-tip:after{
+    content:'';position:absolute;right:-6px;top:50%;margin-top:-6px;
+    border:6px solid transparent;border-left-color:#0f172a;
+  }
+  .bbot-wrap:hover .bbot-tip{opacity:1}
+  .bbot-tip.flip{right:auto;left:82px}
+  .bbot-tip.flip:after{right:auto;left:-6px;border-left-color:transparent;border-right-color:#0f172a}
+
+  .controls{
+    max-width:900px;margin:0 auto 40px;padding:0 16px;
+    display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+  }
+  .controls button{
+    border:1.5px solid #e2e8f0;background:#fff;border-radius:100px;
+    padding:10px 16px;font-weight:600;cursor:pointer;font-family:inherit;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
+  }
+  .controls button:hover{border-color:#a5b4fc;background:#eef2ff;color:#4338ca}
+  .note{text-align:center;color:#64748b;font-size:.9rem;padding-bottom:40px}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <h1>BuddySite Helper Bot — Live demo</h1>
+    <p>Move your mouse inside the box — the eyes follow the cursor. Hover the face for the tip. Use the buttons to preview reactions.</p>
+  </div>
+
+  <div class="stage" id="stage">
+    <div class="stage-label">Demo workspace (bot stays in free corners)</div>
+    <div class="fake-ui">
+      <div class="fake-side">
+        <div></div><div></div><div></div><div></div><div></div>
+      </div>
+      <div class="fake-main">
+        <div class="bar"></div>
+        <div class="card"></div>
+      </div>
+    </div>
+
+    <div class="bbot-wrap" id="botWrap">
+      <div class="bbot-tip" id="botTip">Click on me to ask anything! 😊</div>
+      <div class="bbot-face smile" id="botFace">
+        <div class="bbot-specs"></div>
+        <div class="bbot-eye left"><div class="bbot-pupil"></div></div>
+        <div class="bbot-eye right"><div class="bbot-pupil"></div></div>
+        <div class="bbot-mouth"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button type="button" id="btnHappy">Reaction: Add product (happy)</button>
+    <button type="button" id="btnEdit">Reaction: Edit product (specs)</button>
+    <button type="button" id="btnRoam">Roam to next corner</button>
+    <button type="button" id="btnWave">Wave</button>
+  </div>
+  <p class="note">In the real app this bot sits on Dashboard / Store Admin, opens a chat panel on click, and asks for a star rating when you close the chat.</p>
+
+<script>
+const stage = document.getElementById('stage');
+const wrap = document.getElementById('botWrap');
+const face = document.getElementById('botFace');
+const tip = document.getElementById('botTip');
+const pupils = [...wrap.querySelectorAll('.bbot-pupil')];
+
+// Eyes follow cursor (relative to stage)
+stage.addEventListener('mousemove', (e) => {
+  const rect = face.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const dx = Math.max(-4, Math.min(4, (e.clientX - cx) / 20));
+  const dy = Math.max(-4, Math.min(4, (e.clientY - cy) / 20));
+  pupils.forEach(p => { p.style.transform = `translate(${dx}px, ${dy}px)`; });
+});
+
+function setMood(classes, ms) {
+  face.className = 'bbot-face';
+  classes.split(/\s+/).forEach(c => face.classList.add(c));
+  if (ms) setTimeout(() => { face.className = 'bbot-face smile'; }, ms);
+}
+setMood('smile');
+
+let idx = 0;
+function roam() {
+  const r = stage.getBoundingClientRect();
+  const pad = 16, w = 72, h = 72;
+  const spots = [
+    { left: pad, top: pad + 40 },
+    { left: r.width - w - pad, top: pad + 40 },
+    { left: r.width - w - pad, top: r.height - h - pad },
+    { left: pad, top: r.height - h - pad }
+  ];
+  idx = (idx + 1) % spots.length;
+  const s = spots[idx];
+  wrap.style.left = s.left + 'px';
+  wrap.style.top = s.top + 'px';
+  if (s.left < 80) tip.classList.add('flip'); else tip.classList.remove('flip');
+}
+wrap.style.left = '16px';
+wrap.style.top = '60px';
+setInterval(roam, 5000);
+
+document.getElementById('btnHappy').onclick = () => setMood('happy open', 1800);
+document.getElementById('btnEdit').onclick = () => setMood('think specs', 2500);
+document.getElementById('btnRoam').onclick = roam;
+document.getElementById('btnWave').onclick = () => setMood('happy wave', 900);
+face.onclick = () => setMood('happy wave', 900);
+</script>
+</body>
+</html>

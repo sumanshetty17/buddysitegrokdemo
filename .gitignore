@@ -1,0 +1,7 @@
+node_modules/
+uploads/
+data.json
+data.json.tmp
+.env
+*.bak
+.DS_Store
